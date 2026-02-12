@@ -22,7 +22,7 @@ SplashScreen.preventAutoHideAsync();
 
 function MainStack() {
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A1A14' } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FAF8F0' } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="triage" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="triage-result" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
@@ -40,8 +40,8 @@ function RootLayoutNav() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0A1A14', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#00E676" />
+      <View style={{ flex: 1, backgroundColor: '#FAF8F0', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#2D6A4F" />
       </View>
     );
   }
@@ -75,7 +75,7 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
             <PetProvider>
-              <StatusBar style="light" />
+              <StatusBar style="dark" />
               <RootLayoutNav />
             </PetProvider>
           </KeyboardProvider>

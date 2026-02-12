@@ -34,10 +34,10 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
   };
   const getColor = () => {
     switch (record.type) {
-      case 'vet_visit': return '#4FC3F7';
+      case 'vet_visit': return '#5DA8D3';
       case 'vaccination': return C.accent;
-      case 'medication': return '#FFB74D';
-      case 'triage': return '#CE93D8';
+      case 'medication': return '#D4A574';
+      case 'triage': return '#A77C9E';
       default: return C.accent;
     }
   };

@@ -24,11 +24,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const insets = useSafeAreaInsets();
 
   const theme = {
-    background: isDark ? "#000000" : "#FFFFFF",
-    backgroundSecondary: isDark ? "#1C1C1E" : "#F2F2F7",
-    text: isDark ? "#FFFFFF" : "#000000",
-    textSecondary: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
-    link: "#007AFF",
+    background: "#FAF8F0",
+    backgroundSecondary: "#F5F3EB",
+    text: "#1B1B1B",
+    textSecondary: "#6B7068",
+    link: "#2D6A4F",
     buttonText: "#FFFFFF",
   };
 
@@ -121,9 +121,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                 style={[
                   styles.modalHeader,
                   {
-                    borderBottomColor: isDark
-                      ? "rgba(255, 255, 255, 0.1)"
-                      : "rgba(0, 0, 0, 0.1)",
+                    borderBottomColor: "rgba(27, 27, 27, 0.1)",
                   },
                 ]}
               >

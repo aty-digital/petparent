@@ -92,9 +92,9 @@ function TaskItem({ task, onToggle }: { task: any; onToggle: () => void }) {
   };
   const getColor = () => {
     switch (task.type) {
-      case 'vaccination': return '#4FC3F7';
+      case 'vaccination': return '#5DA8D3';
       case 'medication': return C.accent;
-      case 'supplement': return '#FFB74D';
+      case 'supplement': return '#D4A574';
       default: return C.accent;
     }
   };
@@ -140,7 +140,7 @@ function ActiveMedCard({ record }: { record: any }) {
   return (
     <View style={styles.activeMedCard}>
       <View style={styles.activeMedIcon}>
-        <Ionicons name="medical" size={16} color="#FFB74D" />
+        <Ionicons name="medical" size={16} color="#D4A574" />
       </View>
       <View style={styles.activeMedInfo}>
         <Text style={styles.activeMedName}>{record.title}</Text>
@@ -328,11 +328,11 @@ const styles = StyleSheet.create({
   healthBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: C.accent, letterSpacing: 1 },
   triageCTA: { borderRadius: 16, padding: 20, marginBottom: 16 },
   triageCTATop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  triageIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' },
-  triageTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: C.background },
-  triageSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(0,0,0,0.6)' },
-  triageButton: { backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  triageButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.background },
+  triageIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  triageTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#FFFFFF' },
+  triageSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  triageButton: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  triageButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.accent },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   statCard: { flex: 1, backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.cardBorder },
   statLabel: { fontFamily: 'Inter_500Medium', fontSize: 10, color: C.textMuted, letterSpacing: 1, marginTop: 8 },
@@ -365,11 +365,11 @@ const styles = StyleSheet.create({
   addPetGradient: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 28, paddingVertical: 14 },
   addPetText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.background },
   activeMedCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.cardBorder },
-  activeMedIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,183,77,0.15)', alignItems: 'center', justifyContent: 'center' },
+  activeMedIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(212, 165, 116, 0.15)', alignItems: 'center', justifyContent: 'center' },
   activeMedInfo: { flex: 1, marginLeft: 10 },
   activeMedName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
   activeMedDetails: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginTop: 2 },
   activeMedBell: { width: 28, height: 28, borderRadius: 14, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
-  activeMedCount: { backgroundColor: 'rgba(255,183,77,0.2)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  activeMedCountText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFB74D' },
+  activeMedCount: { backgroundColor: 'rgba(212, 165, 116, 0.2)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  activeMedCountText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#D4A574' },
 });

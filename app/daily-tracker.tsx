@@ -16,7 +16,7 @@ const C = Colors.dark;
 const CATEGORIES: { key: DailyEntry['category']; label: string; icon: string; color: string }[] = [
   { key: 'water', label: 'Water Intake', icon: 'water', color: '#4FC3F7' },
   { key: 'food', label: 'Appetite', icon: 'restaurant', color: '#FFB74D' },
-  { key: 'energy', label: 'Energy Level', icon: 'flash', color: '#00E676' },
+  { key: 'energy', label: 'Energy Level', icon: 'flash', color: C.accent },
   { key: 'mood', label: 'Mood', icon: 'happy', color: '#CE93D8' },
   { key: 'bathroom', label: 'Bathroom', icon: 'leaf', color: '#8BC34A' },
   { key: 'sleep', label: 'Sleep Quality', icon: 'moon', color: '#7986CB' },

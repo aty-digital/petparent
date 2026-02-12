@@ -15,7 +15,7 @@ const C = Colors.dark;
 
 type TaskType = HealthTask['type'];
 const TASK_TYPES: { key: TaskType; label: string; icon: string; color: string }[] = [
-  { key: 'medication', label: 'Medication', icon: 'medical', color: '#00E676' },
+  { key: 'medication', label: 'Medication', icon: 'medical', color: C.accent },
   { key: 'vaccination', label: 'Vaccination', icon: 'shield-checkmark', color: '#4FC3F7' },
   { key: 'supplement', label: 'Supplement', icon: 'nutrition', color: '#FFB74D' },
   { key: 'checkup', label: 'Checkup', icon: 'clipboard', color: '#CE93D8' },

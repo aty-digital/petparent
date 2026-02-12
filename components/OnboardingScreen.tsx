@@ -197,7 +197,7 @@ export default function OnboardingScreen() {
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
-        <LinearGradient colors={['rgba(0,230,118,0.2)', 'rgba(0,230,118,0.05)']} style={styles.logoGlow}>
+        <LinearGradient colors={['rgba(45, 106, 79, 0.2)', 'rgba(45, 106, 79, 0.05)']} style={styles.logoGlow}>
           <View style={styles.logoInner}>
             <Ionicons name="paw" size={48} color={C.accent} />
           </View>
@@ -227,7 +227,7 @@ export default function OnboardingScreen() {
         <Pressable onPress={() => animateTransition('signup')} testID="get-started-btn">
           <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
             <Text style={styles.primaryBtnText}>Get Started</Text>
-            <Ionicons name="arrow-forward" size={20} color={C.background} />
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </LinearGradient>
         </Pressable>
         <Pressable onPress={() => animateTransition('login')} style={styles.secondaryBtn} testID="login-btn">
@@ -303,10 +303,10 @@ export default function OnboardingScreen() {
             colors={(signName.trim() && signEmail.trim() && signPassword.trim()) ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
             style={styles.submitBtn}
           >
-            {loading ? <ActivityIndicator color={C.background} /> : (
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
               <>
                 <Text style={[styles.submitBtnText, !(signName.trim() && signEmail.trim() && signPassword.trim()) && { color: C.textMuted }]}>Continue</Text>
-                <Ionicons name="arrow-forward" size={18} color={(signName.trim() && signEmail.trim() && signPassword.trim()) ? C.background : C.textMuted} />
+                <Ionicons name="arrow-forward" size={18} color={(signName.trim() && signEmail.trim() && signPassword.trim()) ? '#FFFFFF' : C.textMuted} />
               </>
             )}
           </LinearGradient>
@@ -376,10 +376,10 @@ export default function OnboardingScreen() {
             colors={(loginEmail.trim() && loginPassword.trim()) ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
             style={styles.submitBtn}
           >
-            {loading ? <ActivityIndicator color={C.background} /> : (
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
               <>
                 <Text style={[styles.submitBtnText, !(loginEmail.trim() && loginPassword.trim()) && { color: C.textMuted }]}>Log In</Text>
-                <Ionicons name="arrow-forward" size={18} color={(loginEmail.trim() && loginPassword.trim()) ? C.background : C.textMuted} />
+                <Ionicons name="arrow-forward" size={18} color={(loginEmail.trim() && loginPassword.trim()) ? '#FFFFFF' : C.textMuted} />
               </>
             )}
           </LinearGradient>
@@ -472,7 +472,7 @@ export default function OnboardingScreen() {
         <Pressable onPress={handlePetCountNext} testID="petcount-next">
           <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
             <Text style={styles.primaryBtnText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={20} color={C.background} />
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </LinearGradient>
         </Pressable>
       </View>
@@ -614,12 +614,12 @@ export default function OnboardingScreen() {
               colors={petValid ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
               style={styles.submitBtn}
             >
-              {loading ? <ActivityIndicator color={C.background} /> : (
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : (
                 <>
                   <Text style={[styles.submitBtnText, !petValid && { color: C.textMuted }]}>
                     {currentPetIndex < petCount - 1 ? 'Save & Next' : 'Save & Finish'}
                   </Text>
-                  <Ionicons name="arrow-forward" size={18} color={petValid ? C.background : C.textMuted} />
+                  <Ionicons name="arrow-forward" size={18} color={petValid ? '#FFFFFF' : C.textMuted} />
                 </>
               )}
             </LinearGradient>
@@ -633,7 +633,7 @@ export default function OnboardingScreen() {
     <View style={[styles.centeredContainer, { paddingTop: topInset + 60 }]}>
       <Animated.View style={[styles.completeCheckContainer, { transform: [{ scale: checkScale }] }]}>
         <LinearGradient colors={[C.accent, C.accentDim]} style={styles.completeCheckCircle}>
-          <Ionicons name="checkmark" size={48} color={C.background} />
+          <Ionicons name="checkmark" size={48} color="#FFFFFF" />
         </LinearGradient>
       </Animated.View>
 
@@ -663,7 +663,7 @@ export default function OnboardingScreen() {
         <Pressable onPress={handleComplete} testID="complete-btn">
           <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
             <Text style={styles.primaryBtnText}>Start Using PetParent</Text>
-            <Ionicons name="arrow-forward" size={20} color={C.background} />
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </LinearGradient>
         </Pressable>
       </View>
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
-    color: C.background,
+    color: '#FFFFFF',
   },
   secondaryBtn: {
     alignItems: 'center',
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
-    color: C.background,
+    color: '#FFFFFF',
   },
   switchAuthText: {
     fontFamily: 'Inter_400Regular',
@@ -906,7 +906,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   roleIconWrapSelected: {
-    backgroundColor: 'rgba(0,230,118,0.2)',
+    backgroundColor: 'rgba(45, 106, 79, 0.2)',
   },
   roleTitle: {
     fontFamily: 'Inter_600SemiBold',

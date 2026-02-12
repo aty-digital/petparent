@@ -24,7 +24,8 @@ export default function TabLayout() {
               android: C.tabBar,
               web: C.tabBar,
             }),
-            borderTopWidth: 0,
+            borderTopWidth: 1,
+            borderTopColor: '#E8E5DC',
             elevation: 0,
             height: Platform.OS === 'web' ? 84 : 88,
             paddingBottom: Platform.OS === 'web' ? 34 : 28,
@@ -39,7 +40,7 @@ export default function TabLayout() {
             Platform.OS === "ios" ? (
               <BlurView
                 intensity={80}
-                tint="dark"
+                tint="light"
                 style={StyleSheet.absoluteFill}
               />
             ) : null,

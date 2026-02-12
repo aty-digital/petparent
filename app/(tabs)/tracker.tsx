@@ -13,13 +13,13 @@ import type { DailyLog, DailyEntry } from '@/lib/types';
 const C = Colors.dark;
 
 const CATEGORY_CONFIG: Record<string, { icon: string; label: string; color: string; iconSet: 'ion' | 'mci' }> = {
-  water: { icon: 'water', label: 'Water Intake', color: '#4FC3F7', iconSet: 'ion' },
-  food: { icon: 'restaurant', label: 'Appetite', color: '#FFB74D', iconSet: 'ion' },
-  energy: { icon: 'flash', label: 'Energy Level', color: '#00E676', iconSet: 'ion' },
-  mood: { icon: 'happy', label: 'Mood', color: '#CE93D8', iconSet: 'ion' },
-  bathroom: { icon: 'leaf', label: 'Bathroom', color: '#8BC34A', iconSet: 'ion' },
-  sleep: { icon: 'moon', label: 'Sleep Quality', color: '#7986CB', iconSet: 'ion' },
-  custom: { icon: 'ellipsis-horizontal', label: 'Other', color: '#90A4AE', iconSet: 'ion' },
+  water: { icon: 'water', label: 'Water Intake', color: '#3FA9D6', iconSet: 'ion' },
+  food: { icon: 'restaurant', label: 'Appetite', color: '#D97706', iconSet: 'ion' },
+  energy: { icon: 'flash', label: 'Energy Level', color: '#2D6A4F', iconSet: 'ion' },
+  mood: { icon: 'happy', label: 'Mood', color: '#9333EA', iconSet: 'ion' },
+  bathroom: { icon: 'leaf', label: 'Bathroom', color: '#059669', iconSet: 'ion' },
+  sleep: { icon: 'moon', label: 'Sleep Quality', color: '#1E40AF', iconSet: 'ion' },
+  custom: { icon: 'ellipsis-horizontal', label: 'Other', color: '#64748B', iconSet: 'ion' },
 };
 
 const VALUE_LABELS: Record<number, string> = {

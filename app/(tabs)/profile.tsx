@@ -243,7 +243,7 @@ export default function ProfileScreen() {
           </View>
         ) : (
           petRecords.map(r => {
-            const col = r.type === 'vet_visit' ? '#4FC3F7' : r.type === 'vaccination' ? C.accent : r.type === 'triage' ? '#CE93D8' : '#FFB74D';
+            const col = r.type === 'vet_visit' ? '#3FA9D6' : r.type === 'vaccination' ? C.accent : r.type === 'triage' ? '#9333EA' : '#D97706';
             return (
               <View key={r.id} style={styles.historyItem}>
                 <View style={[styles.historyDot, { backgroundColor: col }]} />
