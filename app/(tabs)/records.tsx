@@ -8,7 +8,6 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
-import PetSwitcher from '@/components/PetSwitcher';
 import type { MedicalRecord } from '@/lib/types';
 
 const C = Colors.dark;
@@ -88,7 +87,7 @@ export default function RecordsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <Text style={styles.headerTitle}>Medical Records</Text>
         <Pressable
           onPress={() => {
@@ -100,7 +99,6 @@ export default function RecordsScreen() {
         </Pressable>
       </View>
 
-      <PetSwitcher />
       <View style={styles.filters}>
         <FlatList
           horizontal

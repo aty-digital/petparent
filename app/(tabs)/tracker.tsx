@@ -8,7 +8,6 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
-import PetSwitcher from '@/components/PetSwitcher';
 import type { DailyLog, DailyEntry } from '@/lib/types';
 
 const C = Colors.dark;
@@ -91,11 +90,10 @@ export default function TrackerScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <Text style={styles.headerTitle}>Daily Tracker</Text>
       </View>
 
-      <PetSwitcher />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}

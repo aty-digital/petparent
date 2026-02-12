@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import Colors from '@/constants/colors';
@@ -9,59 +10,112 @@ import { usePets } from '@/lib/pet-context';
 const C = Colors.dark;
 
 export default function PetSwitcher() {
-  const { pets, activePet, setActivePetId } = usePets();
+  const insets = useSafeAreaInsets();
+  const { pets, activePet, setActivePetId, userName } = usePets();
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
 
-  if (pets.length <= 1) return null;
+  if (pets.length === 0) return null;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
-    >
-      {pets.map(pet => {
-        const isActive = pet.id === activePet?.id;
-        return (
-          <Pressable
-            key={pet.id}
-            onPress={() => {
-              if (!isActive) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActivePetId(pet.id);
-              }
-            }}
-            style={[styles.chip, isActive && styles.chipActive]}
-            testID={`pet-switcher-${pet.id}`}
-          >
-            {pet.photoUri ? (
-              <Image source={{ uri: pet.photoUri }} style={[styles.chipAvatar, isActive && styles.chipAvatarActive]} />
-            ) : (
-              <View style={[styles.chipAvatarPlaceholder, isActive && styles.chipAvatarPlaceholderActive]}>
-                <Ionicons name="paw" size={12} color={isActive ? C.background : C.textMuted} />
-              </View>
-            )}
-            <Text style={[styles.chipName, isActive && styles.chipNameActive]} numberOfLines={1}>
-              {pet.name}
-            </Text>
-          </Pressable>
-        );
-      })}
-      <Pressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push('/add-pet');
-        }}
-        style={styles.addChip}
-        testID="pet-switcher-add"
+    <View style={[styles.wrapper, { paddingTop: topInset + 8 }]}>
+      <View style={styles.ownerRow}>
+        <View>
+          <Text style={styles.welcomeLabel}>Pet Owner</Text>
+          <Text style={styles.ownerName}>{userName || 'My Pets'}</Text>
+        </View>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/add-pet');
+          }}
+          style={styles.addButton}
+          testID="header-add-pet"
+        >
+          <Ionicons name="add-circle" size={28} color={C.accent} />
+        </Pressable>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsRow}
       >
-        <Ionicons name="add" size={16} color={C.accent} />
-      </Pressable>
-    </ScrollView>
+        {pets.map(pet => {
+          const isActive = pet.id === activePet?.id;
+          return (
+            <Pressable
+              key={pet.id}
+              onPress={() => {
+                if (!isActive) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setActivePetId(pet.id);
+                }
+              }}
+              style={[styles.chip, isActive && styles.chipActive]}
+              testID={`pet-switcher-${pet.id}`}
+            >
+              {pet.photoUri ? (
+                <Image source={{ uri: pet.photoUri }} style={[styles.chipAvatar, isActive && styles.chipAvatarActive]} />
+              ) : (
+                <View style={[styles.chipAvatarPlaceholder, isActive && styles.chipAvatarPlaceholderActive]}>
+                  <Ionicons name="paw" size={12} color={isActive ? C.background : C.textMuted} />
+                </View>
+              )}
+              <Text style={[styles.chipName, isActive && styles.chipNameActive]} numberOfLines={1}>
+                {pet.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/add-pet');
+          }}
+          style={styles.addChip}
+          testID="pet-switcher-add"
+        >
+          <Ionicons name="add" size={16} color={C.accent} />
+        </Pressable>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 20, gap: 8, paddingBottom: 12 },
+  wrapper: {
+    backgroundColor: C.background,
+    borderBottomWidth: 1,
+    borderBottomColor: C.cardBorder,
+    paddingBottom: 10,
+  },
+  ownerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  welcomeLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.accent,
+    letterSpacing: 0.5,
+  },
+  ownerName: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: C.text,
+    marginTop: 1,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipsRow: { paddingHorizontal: 20, gap: 8 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

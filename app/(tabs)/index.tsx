@@ -9,7 +9,6 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
-import PetSwitcher from '@/components/PetSwitcher';
 
 const C = Colors.dark;
 
@@ -177,7 +176,7 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: topInset }]}>
+      <View style={styles.container}>
         <ActivityIndicator color={C.accent} size="large" style={{ marginTop: 100 }} />
       </View>
     );
@@ -185,7 +184,7 @@ export default function HomeScreen() {
 
   if (!activePet) {
     return (
-      <View style={[styles.container, { paddingTop: topInset }]}>
+      <View style={styles.container}>
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Ionicons name="paw" size={48} color={C.accent} />
@@ -215,26 +214,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topInset + 16, paddingBottom: 120 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: 16, paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.userName}>{userName}</Text>
-          </View>
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/add-pet');
-            }}
-            style={styles.notifButton}
-          >
-            <Ionicons name="add-circle" size={28} color={C.accent} />
-          </Pressable>
-        </View>
-
-        <PetSwitcher />
         <PetCard pet={activePet} />
         <TriageCTA />
 

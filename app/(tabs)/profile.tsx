@@ -10,7 +10,6 @@ import * as ImagePicker from 'expo-image-picker';
 import SvgQRCode from 'react-native-qrcode-svg';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
-import PetSwitcher from '@/components/PetSwitcher';
 import { apiRequest } from '@/lib/query-client';
 
 const C = Colors.dark;
@@ -134,7 +133,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topInset + 12, paddingBottom: 120 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: 12, paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
@@ -152,7 +151,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <PetSwitcher />
         <View style={styles.profileCard}>
           <Pressable onPress={handlePhotoPress} style={styles.avatarWrap} testID="profile-photo">
             <View pointerEvents="none">
