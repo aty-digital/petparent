@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator,
+  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -17,9 +17,13 @@ function PetCard({ pet }: { pet: any }) {
   return (
     <View style={styles.petCard}>
       <View style={styles.petCardInner}>
-        <View style={styles.petAvatar}>
-          <Ionicons name="paw" size={28} color={C.accent} />
-        </View>
+        {pet.photoUri ? (
+          <Image source={{ uri: pet.photoUri }} style={styles.petAvatarImage} />
+        ) : (
+          <View style={styles.petAvatar}>
+            <Ionicons name="paw" size={28} color={C.accent} />
+          </View>
+        )}
         <View style={styles.petInfo}>
           <Text style={styles.petName}>{pet.name}</Text>
           <Text style={styles.petBreed}>{pet.breed} {age ? `\u00B7 ${age}` : ''}</Text>
@@ -332,6 +336,7 @@ const styles = StyleSheet.create({
   petCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
   petCardInner: { flexDirection: 'row', alignItems: 'center' },
   petAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.accentSoft, borderWidth: 2, borderColor: C.accent, alignItems: 'center', justifyContent: 'center' },
+  petAvatarImage: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: C.accent },
   petInfo: { marginLeft: 14, flex: 1 },
   petName: { fontFamily: 'Inter_700Bold', fontSize: 20, color: C.text },
   petBreed: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.textSecondary, marginTop: 2 },

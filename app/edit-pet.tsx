@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Alert,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Alert, Image, ActionSheetIOS,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
@@ -27,6 +28,7 @@ export default function EditPetScreen() {
   const [vetName, setVetName] = useState('');
   const [vetPhone, setVetPhone] = useState('');
   const [vetClinic, setVetClinic] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
   const [userName, setUserNameLocal] = useState('');
   const { userName: savedUserName, setUserName } = usePets();
 
@@ -41,9 +43,49 @@ export default function EditPetScreen() {
       setVetName(activePet.vetName || '');
       setVetPhone(activePet.vetPhone || '');
       setVetClinic(activePet.vetClinic || '');
+      setPhotoUri(activePet.photoUri);
     }
     setUserNameLocal(savedUserName);
   }, [activePet, savedUserName]);
+
+  const pickPhoto = async (useCamera: boolean) => {
+    let result: ImagePicker.ImagePickerResult;
+    if (useCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Camera access is required to take a photo.');
+        return;
+      }
+      result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Photo library access is required.');
+        return;
+      }
+      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    }
+    if (!result.canceled && result.assets[0]) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePhotoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
+        (index) => { if (index === 1) pickPhoto(true); if (index === 2) pickPhoto(false); }
+      );
+    } else {
+      Alert.alert('Update Photo', 'Choose an option', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Take Photo', onPress: () => pickPhoto(true) },
+        { text: 'Choose from Library', onPress: () => pickPhoto(false) },
+      ]);
+    }
+  };
 
   const handleSave = async () => {
     if (!activePet || !name.trim()) return;
@@ -60,6 +102,7 @@ export default function EditPetScreen() {
       vetName: vetName.trim() || undefined,
       vetPhone: vetPhone.trim() || undefined,
       vetClinic: vetClinic.trim() || undefined,
+      photoUri,
     });
 
     if (userName.trim() !== savedUserName) {
@@ -111,6 +154,20 @@ export default function EditPetScreen() {
             <Text style={styles.headerTitle}>Edit Profile</Text>
             <View style={{ width: 40 }} />
           </View>
+
+          <Pressable onPress={handlePhotoPress} style={styles.photoSection}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Ionicons name="paw" size={32} color={C.accent} />
+              </View>
+            )}
+            <View style={styles.photoCameraBtn}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+            <Text style={styles.photoHint}>Tap to change photo</Text>
+          </Pressable>
 
           <Text style={styles.sectionLabel}>Your Name</Text>
           <TextInput style={styles.input} value={userName} onChangeText={setUserNameLocal} placeholder="Your name" placeholderTextColor={C.textMuted} />
@@ -223,4 +280,9 @@ const styles = StyleSheet.create({
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16, paddingVertical: 14 },
   deleteBtnText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: C.danger },
   emptyText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: C.textMuted, textAlign: 'center', marginTop: 100 },
+  photoSection: { alignItems: 'center', marginBottom: 8, position: 'relative' as const },
+  photoPreview: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: C.accent },
+  photoPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.accentSoft, borderWidth: 3, borderColor: C.accent, alignItems: 'center', justifyContent: 'center' },
+  photoCameraBtn: { position: 'absolute' as const, top: 54, right: '50%', marginRight: -40, width: 28, height: 28, borderRadius: 14, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
+  photoHint: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginTop: 8 },
 });

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, Share,
+  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, Share, Image, ActionSheetIOS, Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import SvgQRCode from 'react-native-qrcode-svg';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
@@ -29,9 +30,67 @@ function getAge(birthDate: string): string {
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const { activePet, records, tasks } = usePets();
+  const { activePet, records, tasks, updatePet } = usePets();
   const [careTips, setCareTips] = useState<string>('');
   const [loadingTips, setLoadingTips] = useState(false);
+
+  const pickPhoto = async (useCamera: boolean) => {
+    if (!activePet) return;
+    let result: ImagePicker.ImagePickerResult;
+
+    if (useCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Camera access is required to take a photo.');
+        return;
+      }
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Photo library access is required to select a photo.');
+        return;
+      }
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+    }
+
+    if (!result.canceled && result.assets[0]) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await updatePet({ ...activePet, photoUri: result.assets[0].uri });
+    }
+  };
+
+  const handlePhotoPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
+          cancelButtonIndex: 0,
+        },
+        (index) => {
+          if (index === 1) pickPhoto(true);
+          if (index === 2) pickPhoto(false);
+        }
+      );
+    } else {
+      Alert.alert('Update Photo', 'Choose an option', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Take Photo', onPress: () => pickPhoto(true) },
+        { text: 'Choose from Library', onPress: () => pickPhoto(false) },
+      ]);
+    }
+  };
 
   const petRecords = records.filter(r => r.petId === activePet?.id)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -110,9 +169,18 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.avatarLarge}>
-            <Ionicons name="paw" size={36} color={C.accent} />
-          </View>
+          <Pressable onPress={handlePhotoPress} style={styles.avatarWrap}>
+            {activePet.photoUri ? (
+              <Image source={{ uri: activePet.photoUri }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarLarge}>
+                <Ionicons name="paw" size={36} color={C.accent} />
+              </View>
+            )}
+            <View style={styles.cameraOverlay}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+          </Pressable>
           <Text style={styles.profileName}>{activePet.name}</Text>
           <Text style={styles.profileId}>ID: {petId}</Text>
 
@@ -244,7 +312,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: C.text },
   headerActions: { flexDirection: 'row', gap: 16 },
   profileCard: { alignItems: 'center', backgroundColor: C.card, borderRadius: 16, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: C.cardBorder },
-  avatarLarge: { width: 72, height: 72, borderRadius: 36, backgroundColor: C.accentSoft, borderWidth: 3, borderColor: C.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatarWrap: { position: 'relative' as const, marginBottom: 12 },
+  avatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.accentSoft, borderWidth: 3, borderColor: C.accent, alignItems: 'center', justifyContent: 'center' },
+  avatarImage: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: C.accent },
+  cameraOverlay: { position: 'absolute' as const, bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
   profileName: { fontFamily: 'Inter_700Bold', fontSize: 22, color: C.text },
   profileId: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textMuted, marginTop: 4 },
   infoRow: { flexDirection: 'row', gap: 10, marginTop: 16, width: '100%' },
