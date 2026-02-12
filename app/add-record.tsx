@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Switch, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
-import type { MedicalRecord } from '@/lib/types';
+import { scheduleMedicationReminders, requestNotificationPermission, getFrequencyLabel } from '@/lib/notifications';
+import type { MedicalRecord, MedicationFrequency } from '@/lib/types';
 
 const C = Colors.dark;
 
@@ -19,6 +20,26 @@ const TYPES: { key: RecordType; label: string; icon: string; color: string }[] =
   { key: 'vaccination', label: 'Vaccination', icon: 'shield-checkmark', color: '#00E676' },
   { key: 'medication', label: 'Medication', icon: 'medical', color: '#FFB74D' },
 ];
+
+const FREQUENCIES: { key: MedicationFrequency; label: string }[] = [
+  { key: 'once_daily', label: 'Once Daily' },
+  { key: 'twice_daily', label: 'Twice Daily' },
+  { key: 'three_daily', label: '3x Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'biweekly', label: 'Biweekly' },
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'as_needed', label: 'As Needed' },
+];
+
+const DEFAULT_TIMES: Record<MedicationFrequency, string[]> = {
+  once_daily: ['09:00'],
+  twice_daily: ['09:00', '21:00'],
+  three_daily: ['08:00', '14:00', '20:00'],
+  weekly: ['09:00'],
+  biweekly: ['09:00'],
+  monthly: ['09:00'],
+  as_needed: [],
+};
 
 export default function AddRecordScreen() {
   const insets = useSafeAreaInsets();
@@ -33,11 +54,58 @@ export default function AddRecordScreen() {
   const [clinic, setClinic] = useState('');
   const [expiresDate, setExpiresDate] = useState('');
 
+  const [currentlyTaking, setCurrentlyTaking] = useState(false);
+  const [frequency, setFrequency] = useState<MedicationFrequency>('once_daily');
+  const [reminderTimes, setReminderTimes] = useState<string[]>(['09:00']);
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const isMedication = type === 'medication';
   const isValid = title.trim() && date;
 
+  const handleFrequencyChange = (freq: MedicationFrequency) => {
+    Haptics.selectionAsync();
+    setFrequency(freq);
+    setReminderTimes(DEFAULT_TIMES[freq]);
+  };
+
+  const handleReminderTimeChange = (index: number, value: string) => {
+    const cleaned = value.replace(/[^0-9:]/g, '');
+    const updated = [...reminderTimes];
+    updated[index] = cleaned;
+    setReminderTimes(updated);
+  };
+
+  const handleToggleReminders = async (val: boolean) => {
+    if (val && Platform.OS !== 'web') {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          'Notifications Disabled',
+          'Please enable notifications in your device settings to receive medication reminders.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+    setRemindersEnabled(val);
+  };
+
   const handleSave = async () => {
-    if (!isValid || !activePet) return;
+    if (!isValid || !activePet || saving) return;
+    setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    let notificationIds: string[] = [];
+
+    if (isMedication && currentlyTaking && remindersEnabled && frequency !== 'as_needed') {
+      notificationIds = await scheduleMedicationReminders(
+        activePet.name,
+        title.trim(),
+        frequency,
+        reminderTimes,
+      );
+    }
 
     const record: MedicalRecord = {
       id: generateId(),
@@ -49,9 +117,15 @@ export default function AddRecordScreen() {
       doctor: doctor.trim() || undefined,
       clinic: clinic.trim() || undefined,
       expiresDate: expiresDate || undefined,
+      currentlyTaking: isMedication ? currentlyTaking : undefined,
+      frequency: isMedication && currentlyTaking ? frequency : undefined,
+      reminderTimes: isMedication && currentlyTaking ? reminderTimes : undefined,
+      remindersEnabled: isMedication && currentlyTaking ? remindersEnabled : undefined,
+      notificationIds: notificationIds.length > 0 ? notificationIds : undefined,
     };
 
     await addRecord(record);
+    setSaving(false);
     router.back();
   };
 
@@ -86,7 +160,7 @@ export default function AddRecordScreen() {
           </View>
 
           <Text style={styles.label}>Title *</Text>
-          <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g., Annual Wellness Exam" placeholderTextColor={C.textMuted} />
+          <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g., Amoxicillin 250mg" placeholderTextColor={C.textMuted} />
 
           <Text style={styles.label}>Description</Text>
           <TextInput style={[styles.input, { minHeight: 80 }]} value={description} onChangeText={setDescription} placeholder="Details about the visit, medication, or vaccine..." placeholderTextColor={C.textMuted} multiline textAlignVertical="top" />
@@ -101,18 +175,101 @@ export default function AddRecordScreen() {
             </>
           )}
 
+          {isMedication && (
+            <>
+              <View style={styles.divider} />
+
+              <Pressable
+                style={styles.checkboxRow}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setCurrentlyTaking(!currentlyTaking);
+                }}
+              >
+                <View style={[styles.checkbox, currentlyTaking && styles.checkboxChecked]}>
+                  {currentlyTaking && <Ionicons name="checkmark" size={14} color={C.background} />}
+                </View>
+                <View style={styles.checkboxTextWrap}>
+                  <Text style={styles.checkboxLabel}>Currently Taking</Text>
+                  <Text style={styles.checkboxSub}>This medication is part of an ongoing treatment</Text>
+                </View>
+              </Pressable>
+
+              {currentlyTaking && (
+                <View style={styles.medSection}>
+                  <Text style={styles.label}>Frequency</Text>
+                  <View style={styles.freqGrid}>
+                    {FREQUENCIES.map(f => (
+                      <Pressable
+                        key={f.key}
+                        style={[styles.freqChip, frequency === f.key && styles.freqChipActive]}
+                        onPress={() => handleFrequencyChange(f.key)}
+                      >
+                        <Text style={[styles.freqText, frequency === f.key && styles.freqTextActive]}>{f.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {frequency !== 'as_needed' && (
+                    <>
+                      <Text style={styles.label}>Reminder Times</Text>
+                      {reminderTimes.map((time, i) => (
+                        <View key={i} style={styles.timeRow}>
+                          <Ionicons name="time-outline" size={18} color={C.accent} />
+                          <TextInput
+                            style={styles.timeInput}
+                            value={time}
+                            onChangeText={(v) => handleReminderTimeChange(i, v)}
+                            placeholder="HH:MM"
+                            placeholderTextColor={C.textMuted}
+                            keyboardType="numbers-and-punctuation"
+                            maxLength={5}
+                          />
+                          <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
+                        </View>
+                      ))}
+
+                      <View style={styles.reminderToggle}>
+                        <View style={styles.reminderToggleLeft}>
+                          <Ionicons name="notifications-outline" size={20} color={remindersEnabled ? C.accent : C.textMuted} />
+                          <View>
+                            <Text style={styles.reminderToggleLabel}>Remind Me</Text>
+                            <Text style={styles.reminderToggleSub}>
+                              {Platform.OS === 'web'
+                                ? 'Available on mobile devices'
+                                : 'Get notified when it\'s time for a dose'}
+                            </Text>
+                          </View>
+                        </View>
+                        <Switch
+                          value={remindersEnabled}
+                          onValueChange={handleToggleReminders}
+                          trackColor={{ false: C.cardBorder, true: C.accentSoft }}
+                          thumbColor={remindersEnabled ? C.accent : C.textMuted}
+                          disabled={Platform.OS === 'web'}
+                        />
+                      </View>
+                    </>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+
           <Text style={styles.label}>Doctor</Text>
           <TextInput style={styles.input} value={doctor} onChangeText={setDoctor} placeholder="Dr. Smith" placeholderTextColor={C.textMuted} />
 
           <Text style={styles.label}>Clinic</Text>
           <TextInput style={styles.input} value={clinic} onChangeText={setClinic} placeholder="City Vet Clinic" placeholderTextColor={C.textMuted} />
 
-          <Pressable onPress={handleSave} disabled={!isValid}>
+          <Pressable onPress={handleSave} disabled={!isValid || saving}>
             <LinearGradient
-              colors={isValid ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+              colors={isValid && !saving ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
               style={styles.saveBtn}
             >
-              <Text style={[styles.saveBtnText, !isValid && { color: C.textMuted }]}>Save Record</Text>
+              <Text style={[styles.saveBtnText, (!isValid || saving) && { color: C.textMuted }]}>
+                {saving ? 'Saving...' : 'Save Record'}
+              </Text>
             </LinearGradient>
           </Pressable>
         </ScrollView>
@@ -135,4 +292,24 @@ const styles = StyleSheet.create({
   typeText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: C.textMuted },
   saveBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
+  divider: { height: 1, backgroundColor: C.cardBorder, marginVertical: 16 },
+  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 4 },
+  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: C.accent, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  checkboxChecked: { backgroundColor: C.accent, borderColor: C.accent },
+  checkboxTextWrap: { flex: 1 },
+  checkboxLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.text },
+  checkboxSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginTop: 2 },
+  medSection: { marginTop: 4 },
+  freqGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  freqChip: { backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.cardBorder },
+  freqChipActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
+  freqText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: C.textMuted },
+  freqTextActive: { color: C.accent },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  timeInput: { flex: 1, backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontFamily: 'Inter_500Medium', fontSize: 14, color: C.text, borderWidth: 1, borderColor: C.cardBorder },
+  timeDoseLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, width: 50 },
+  reminderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.card, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: C.cardBorder },
+  reminderToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  reminderToggleLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
+  reminderToggleSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textSecondary, marginTop: 1 },
 });
