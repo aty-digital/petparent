@@ -204,8 +204,8 @@ export default function OnboardingScreen() {
         </LinearGradient>
       </Animated.View>
 
-      <Text style={styles.brandTitle}>PawGuard</Text>
-      <Text style={styles.brandSubtitle}>Your pet's health companion</Text>
+      <Text style={styles.brandTitle}>PetParent</Text>
+      <Text style={styles.brandSubtitle}>AI Vet Assistant & Pet Health Log</Text>
 
       <View style={styles.featureList}>
         {[
@@ -246,7 +246,7 @@ export default function OnboardingScreen() {
 
         <View style={styles.formHeader}>
           <Text style={styles.stepTitle}>Create Account</Text>
-          <Text style={styles.stepSubtitle}>Join PawGuard to start tracking your pet's health</Text>
+          <Text style={styles.stepSubtitle}>Join PetParent to start tracking your pet's health</Text>
         </View>
 
         <View style={styles.inputGroup}>
@@ -395,7 +395,7 @@ export default function OnboardingScreen() {
   const renderRole = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 20 }]}>
       <View style={styles.formHeader}>
-        <Text style={styles.stepTitle}>How will you use PawGuard?</Text>
+        <Text style={styles.stepTitle}>How will you use PetParent?</Text>
         <Text style={styles.stepSubtitle}>Select your role to personalize your experience</Text>
       </View>
 
@@ -662,7 +662,7 @@ export default function OnboardingScreen() {
       <View style={[styles.bottomActions, { paddingBottom: bottomInset + 16 }]}>
         <Pressable onPress={handleComplete} testID="complete-btn">
           <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Start Using PawGuard</Text>
+            <Text style={styles.primaryBtnText}>Start Using PetParent</Text>
             <Ionicons name="arrow-forward" size={20} color={C.background} />
           </LinearGradient>
         </Pressable>

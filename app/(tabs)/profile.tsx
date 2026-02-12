@@ -110,7 +110,7 @@ export default function ProfileScreen() {
   const handleShare = async () => {
     if (!activePet) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const text = `${activePet.name}'s Health Profile\nBreed: ${activePet.breed}\nAge: ${getAge(activePet.birthDate)}\nWeight: ${activePet.weight} ${activePet.weightUnit}\nVaccination Records: ${totalVaccinations}\n\nShared via PawGuard`;
+    const text = `${activePet.name}'s Health Profile\nBreed: ${activePet.breed}\nAge: ${getAge(activePet.birthDate)}\nWeight: ${activePet.weight} ${activePet.weightUnit}\nVaccination Records: ${totalVaccinations}\n\nShared via PetParent`;
     try {
       await Share.share({ message: text, title: `${activePet.name}'s Profile` });
     } catch (e) {}
@@ -262,7 +262,7 @@ export default function ProfileScreen() {
           <Text style={styles.qrDesc}>Share this QR code with your vet or pet sitter for instant access to {activePet.name}'s profile.</Text>
           <View style={styles.qrWrapper}>
             <SvgQRCode
-              value={`pawguard://pet/${activePet.id}`}
+              value={`petparent://pet/${activePet.id}`}
               size={120}
               backgroundColor={C.card}
               color={C.accent}

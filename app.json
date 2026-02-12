@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "PawGuard",
-    "slug": "pawguard",
+    "name": "PetParent",
+    "slug": "petparent",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pawguard",
+    "scheme": "petparent",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.pawguard"
+      "bundleIdentifier": "com.petparent"
     },
     "android": {
-      "package": "com.pawguard",
+      "package": "com.petparent",
       "adaptiveIcon": {
         "backgroundColor": "#0A1A14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

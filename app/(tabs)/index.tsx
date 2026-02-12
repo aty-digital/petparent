@@ -189,7 +189,7 @@ export default function HomeScreen() {
           <View style={styles.emptyIcon}>
             <Ionicons name="paw" size={48} color={C.accent} />
           </View>
-          <Text style={styles.emptyTitle}>Welcome to PawGuard</Text>
+          <Text style={styles.emptyTitle}>Welcome to PetParent</Text>
           <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI symptom triage, and more.</Text>
           <Pressable
             style={styles.addPetButton}
