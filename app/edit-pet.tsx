@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Alert, Image, ActionSheetIOS,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Alert, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,20 +71,9 @@ export default function EditPetScreen() {
     }
   };
 
-  const handlePhotoPress = () => {
+  const handlePhotoPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
-        (index) => { if (index === 1) pickPhoto(true); if (index === 2) pickPhoto(false); }
-      );
-    } else {
-      Alert.alert('Update Photo', 'Choose an option', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Take Photo', onPress: () => pickPhoto(true) },
-        { text: 'Choose from Library', onPress: () => pickPhoto(false) },
-      ]);
-    }
+    pickPhoto(false);
   };
 
   const handleSave = async () => {
@@ -155,18 +144,20 @@ export default function EditPetScreen() {
             <View style={{ width: 40 }} />
           </View>
 
-          <Pressable onPress={handlePhotoPress} style={styles.photoSection}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            ) : (
-              <View style={styles.photoPlaceholder}>
-                <Ionicons name="paw" size={32} color={C.accent} />
+          <Pressable onPress={handlePhotoPress} style={styles.photoSection} testID="edit-pet-photo">
+            <View pointerEvents="none">
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="paw" size={32} color={C.accent} />
+                </View>
+              )}
+              <View style={styles.photoCameraBtn}>
+                <Ionicons name="camera" size={14} color="#fff" />
               </View>
-            )}
-            <View style={styles.photoCameraBtn}>
-              <Ionicons name="camera" size={14} color="#fff" />
             </View>
-            <Text style={styles.photoHint}>Tap to change photo</Text>
+            <Text style={styles.photoHint} pointerEvents="none">Tap to change photo</Text>
           </Pressable>
 
           <Text style={styles.sectionLabel}>Your Name</Text>

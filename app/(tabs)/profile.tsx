@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, Share, Image, ActionSheetIOS, Alert,
+  StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, Share, Image, Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,26 +70,9 @@ export default function ProfileScreen() {
     }
   };
 
-  const handlePhotoPress = () => {
+  const handlePhotoPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Take Photo', 'Choose from Library'],
-          cancelButtonIndex: 0,
-        },
-        (index) => {
-          if (index === 1) pickPhoto(true);
-          if (index === 2) pickPhoto(false);
-        }
-      );
-    } else {
-      Alert.alert('Update Photo', 'Choose an option', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Take Photo', onPress: () => pickPhoto(true) },
-        { text: 'Choose from Library', onPress: () => pickPhoto(false) },
-      ]);
-    }
+    pickPhoto(false);
   };
 
   const petRecords = records.filter(r => r.petId === activePet?.id)
@@ -169,16 +152,18 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.profileCard}>
-          <Pressable onPress={handlePhotoPress} style={styles.avatarWrap}>
-            {activePet.photoUri ? (
-              <Image source={{ uri: activePet.photoUri }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarLarge}>
-                <Ionicons name="paw" size={36} color={C.accent} />
+          <Pressable onPress={handlePhotoPress} style={styles.avatarWrap} testID="profile-photo">
+            <View pointerEvents="none">
+              {activePet.photoUri ? (
+                <Image source={{ uri: activePet.photoUri }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarLarge}>
+                  <Ionicons name="paw" size={36} color={C.accent} />
+                </View>
+              )}
+              <View style={styles.cameraOverlay}>
+                <Ionicons name="camera" size={14} color="#fff" />
               </View>
-            )}
-            <View style={styles.cameraOverlay}>
-              <Ionicons name="camera" size={14} color="#fff" />
             </View>
           </Pressable>
           <Text style={styles.profileName}>{activePet.name}</Text>
