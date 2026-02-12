@@ -5,6 +5,7 @@
 PawGuard is a pet health management mobile application built with Expo (React Native). It allows pet owners to track their pets' health through medical records, daily wellness logging, health task scheduling, and an AI-powered symptom triage system. The app uses a dark green-themed UI with a focus on pet wellness tracking and veterinary guidance.
 
 Key features:
+- **Onboarding Flow**: Multi-step guided onboarding with sign-up/login, role selection (Pet Parent/Sitter/Vet), pet count picker, and multi-pet profile creation loop. Gates main app until completed.
 - **Pet Profiles**: Add/edit multiple pets with breed, species, weight, vet info
 - **Medical Records**: Track vet visits, vaccinations, and medications with optional medication reminders
 - **Daily Wellness Tracker**: Log daily metrics (water, food, energy, mood, bathroom, sleep) on a 1-5 scale
