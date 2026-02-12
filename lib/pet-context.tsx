@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult } from './types';
 
+export type UserRole = 'pet_parent' | 'sitter' | 'vet';
+
 interface PetContextValue {
   pets: Pet[];
   activePet: Pet | null;
@@ -25,6 +27,14 @@ interface PetContextValue {
   isLoading: boolean;
   userName: string;
   setUserName: (name: string) => Promise<void>;
+  onboardingComplete: boolean;
+  userEmail: string;
+  userRole: UserRole | null;
+  setUserRole: (role: UserRole) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const PetContext = createContext<PetContextValue | null>(null);
@@ -37,6 +47,10 @@ const STORAGE_KEYS = {
   TASKS: '@pawguard_tasks',
   TRIAGE: '@pawguard_triage',
   USER_NAME: '@pawguard_user_name',
+  ONBOARDING_COMPLETE: '@pawguard_onboarding_complete',
+  USER_EMAIL: '@pawguard_user_email',
+  USER_PASSWORD: '@pawguard_user_password',
+  USER_ROLE: '@pawguard_user_role',
 };
 
 function generateId(): string {
@@ -52,6 +66,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [triageResults, setTriageResults] = useState<TriageResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserNameState] = useState('Pet Owner');
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRoleState] = useState<UserRole | null>(null);
 
   useEffect(() => {
     loadData();
@@ -59,7 +76,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const loadData = async () => {
     try {
-      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData] = await Promise.all([
+      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, emailData, roleData] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.PETS),
         AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_PET),
         AsyncStorage.getItem(STORAGE_KEYS.RECORDS),
@@ -67,6 +84,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(STORAGE_KEYS.TASKS),
         AsyncStorage.getItem(STORAGE_KEYS.TRIAGE),
         AsyncStorage.getItem(STORAGE_KEYS.USER_NAME),
+        AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_EMAIL),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_ROLE),
       ]);
 
       const loadedPets: Pet[] = petsData ? JSON.parse(petsData) : [];
@@ -81,6 +101,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
       setTasks(tasksData ? JSON.parse(tasksData) : []);
       setTriageResults(triageData ? JSON.parse(triageData) : []);
       if (nameData) setUserNameState(nameData);
+      if (onboardingData === 'true') setOnboardingComplete(true);
+      if (emailData) setUserEmail(emailData);
+      if (roleData) setUserRoleState(roleData as UserRole);
     } catch (e) {
       console.error('Failed to load data:', e);
     } finally {
@@ -177,6 +200,49 @@ export function PetProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.USER_NAME, name);
   }, []);
 
+  const setUserRole = useCallback(async (role: UserRole) => {
+    setUserRoleState(role);
+    await AsyncStorage.setItem(STORAGE_KEYS.USER_ROLE, role);
+  }, []);
+
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    setUserNameState(name);
+    setUserEmail(email);
+    await Promise.all([
+      AsyncStorage.setItem(STORAGE_KEYS.USER_NAME, name),
+      AsyncStorage.setItem(STORAGE_KEYS.USER_EMAIL, email),
+      AsyncStorage.setItem(STORAGE_KEYS.USER_PASSWORD, password),
+    ]);
+  }, []);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    const storedEmail = await AsyncStorage.getItem(STORAGE_KEYS.USER_EMAIL);
+    const storedPassword = await AsyncStorage.getItem(STORAGE_KEYS.USER_PASSWORD);
+    if (storedEmail === email && storedPassword === password) {
+      setUserEmail(email);
+      const nameData = await AsyncStorage.getItem(STORAGE_KEYS.USER_NAME);
+      if (nameData) setUserNameState(nameData);
+      const roleData = await AsyncStorage.getItem(STORAGE_KEYS.USER_ROLE);
+      if (roleData) setUserRoleState(roleData as UserRole);
+      setOnboardingComplete(true);
+      return true;
+    }
+    return false;
+  }, []);
+
+  const logout = useCallback(async () => {
+    setOnboardingComplete(false);
+    setUserEmail('');
+    setUserRoleState(null);
+    setUserNameState('Pet Owner');
+    await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
+  }, []);
+
+  const completeOnboarding = useCallback(async () => {
+    setOnboardingComplete(true);
+    await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+  }, []);
+
   const value = useMemo(() => ({
     pets, activePet, setActivePetId, addPet, updatePet, deletePet,
     records, addRecord, deleteRecord,
@@ -184,11 +250,15 @@ export function PetProvider({ children }: { children: ReactNode }) {
     tasks, addTask, toggleTask, deleteTask,
     triageResults, addTriageResult,
     isLoading, userName, setUserName,
+    onboardingComplete, userEmail, userRole, setUserRole,
+    signup, login, logout, completeOnboarding,
   }), [pets, activePet, setActivePetId, addPet, updatePet, deletePet,
     records, addRecord, deleteRecord,
     dailyLogs, addDailyLog, updateDailyLog, getTodayLog,
     tasks, addTask, toggleTask, deleteTask,
-    triageResults, addTriageResult, isLoading, userName, setUserName]);
+    triageResults, addTriageResult, isLoading, userName, setUserName,
+    onboardingComplete, userEmail, userRole, setUserRole,
+    signup, login, logout, completeOnboarding]);
 
   return <PetContext.Provider value={value}>{children}</PetContext.Provider>;
 }
