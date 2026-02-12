@@ -125,10 +125,42 @@ function TaskItem({ task, onToggle }: { task: any; onToggle: () => void }) {
   );
 }
 
+function ActiveMedCard({ record }: { record: any }) {
+  const freqLabels: Record<string, string> = {
+    once_daily: '1x/day', twice_daily: '2x/day', three_daily: '3x/day',
+    weekly: 'Weekly', biweekly: 'Biweekly', monthly: 'Monthly', as_needed: 'As needed',
+  };
+  const freqLabel = record.frequency ? freqLabels[record.frequency] || record.frequency : '';
+  const timesLabel = record.reminderTimes?.length ? record.reminderTimes.join(', ') : '';
+
+  return (
+    <View style={styles.activeMedCard}>
+      <View style={styles.activeMedIcon}>
+        <Ionicons name="medical" size={16} color="#FFB74D" />
+      </View>
+      <View style={styles.activeMedInfo}>
+        <Text style={styles.activeMedName}>{record.title}</Text>
+        <Text style={styles.activeMedDetails}>
+          {freqLabel}{timesLabel ? ` \u00B7 ${timesLabel}` : ''}
+        </Text>
+      </View>
+      {record.remindersEnabled && (
+        <View style={styles.activeMedBell}>
+          <Ionicons name="notifications" size={14} color={C.accent} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { activePet, pets, tasks, toggleTask, isLoading, userName } = usePets();
+  const { activePet, pets, records, tasks, toggleTask, isLoading, userName } = usePets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
+
+  const activeMeds = records.filter(
+    r => r.petId === activePet?.id && r.type === 'medication' && r.currentlyTaking
+  );
 
   const petTasks = tasks
     .filter(t => t.petId === activePet?.id)
@@ -204,6 +236,21 @@ export default function HomeScreen() {
           <StatCard icon="heart" label="WEIGHT" value={String(activePet.weight)} unit={activePet.weightUnit} />
           <StatCard icon="fitness" label="SPECIES" value={activePet.species.charAt(0).toUpperCase() + activePet.species.slice(1)} unit="" />
         </View>
+
+        {activeMeds.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Active Medications</Text>
+              <View style={styles.activeMedCount}>
+                <Text style={styles.activeMedCountText}>{activeMeds.length}</Text>
+              </View>
+            </View>
+            {activeMeds.map(med => (
+              <ActiveMedCard key={med.id} record={med} />
+            ))}
+            <View style={{ height: 16 }} />
+          </>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
@@ -328,4 +375,12 @@ const styles = StyleSheet.create({
   addPetButton: { marginTop: 24, borderRadius: 14, overflow: 'hidden' },
   addPetGradient: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 28, paddingVertical: 14 },
   addPetText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.background },
+  activeMedCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.cardBorder },
+  activeMedIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,183,77,0.15)', alignItems: 'center', justifyContent: 'center' },
+  activeMedInfo: { flex: 1, marginLeft: 10 },
+  activeMedName: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
+  activeMedDetails: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginTop: 2 },
+  activeMedBell: { width: 28, height: 28, borderRadius: 14, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  activeMedCount: { backgroundColor: 'rgba(255,183,77,0.2)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  activeMedCountText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFB74D' },
 });
