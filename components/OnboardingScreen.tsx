@@ -544,7 +544,7 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={styles.rowFields}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.rowFieldHalf}>
               <Text style={styles.inputLabel}>Weight *</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
@@ -558,7 +558,7 @@ export default function OnboardingScreen() {
                 />
               </View>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.rowFieldHalf}>
               <Text style={styles.inputLabel}>Unit</Text>
               <View style={styles.toggleRow}>
                 <Pressable
@@ -578,7 +578,7 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={styles.rowFields}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.rowFieldHalf}>
               <Text style={styles.inputLabel}>Gender</Text>
               <View style={styles.toggleRow}>
                 <Pressable
@@ -595,7 +595,7 @@ export default function OnboardingScreen() {
                 </Pressable>
               </View>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.rowFieldHalf}>
               <Text style={styles.inputLabel}>Color</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
@@ -1043,6 +1043,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginBottom: 18,
+  },
+  rowFieldHalf: {
+    flex: 1,
+    minWidth: 0,
   },
   toggleRow: {
     flexDirection: 'row',
