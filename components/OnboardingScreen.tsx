@@ -214,7 +214,7 @@ export default function OnboardingScreen() {
           { icon: 'analytics', text: 'Daily wellness logs' },
           { icon: 'qr-code', text: 'Shareable pet profiles' },
         ].map((f, i) => (
-          <View key={i} style={styles.featureItem}>
+          <View key={f.icon} style={styles.featureItem}>
             <View style={styles.featureIcon}>
               <Ionicons name={f.icon as any} size={18} color={C.accent} />
             </View>
@@ -462,7 +462,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.petDotsRow}>
         {Array.from({ length: petCount }).map((_, i) => (
-          <View key={i} style={styles.petDot}>
+          <View key={`dot-${i}`} style={styles.petDot}>
             <Ionicons name="paw" size={16} color={C.accent} />
           </View>
         ))}

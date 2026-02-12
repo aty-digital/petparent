@@ -2,12 +2,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar } from "expo-status-bar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
-import { PetProvider } from "@/lib/pet-context";
+import { PetProvider, usePets } from "@/lib/pet-context";
+import OnboardingScreen from "@/components/OnboardingScreen";
 import {
   useFonts,
   Inter_400Regular,
@@ -18,7 +20,7 @@ import {
 
 SplashScreen.preventAutoHideAsync();
 
-function RootLayoutNav() {
+function MainStack() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A1A14' } }}>
       <Stack.Screen name="(tabs)" />
@@ -31,6 +33,24 @@ function RootLayoutNav() {
       <Stack.Screen name="edit-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
     </Stack>
   );
+}
+
+function RootLayoutNav() {
+  const { isLoading, onboardingComplete } = usePets();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0A1A14', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#00E676" />
+      </View>
+    );
+  }
+
+  if (!onboardingComplete) {
+    return <OnboardingScreen />;
+  }
+
+  return <MainStack />;
 }
 
 export default function RootLayout() {
