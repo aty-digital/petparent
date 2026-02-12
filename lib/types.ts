@@ -15,6 +15,8 @@ export interface Pet {
   vetClinic?: string;
 }
 
+export type MedicationFrequency = 'once_daily' | 'twice_daily' | 'three_daily' | 'weekly' | 'biweekly' | 'monthly' | 'as_needed';
+
 export interface MedicalRecord {
   id: string;
   petId: string;
@@ -26,6 +28,11 @@ export interface MedicalRecord {
   clinic?: string;
   status?: string;
   expiresDate?: string;
+  currentlyTaking?: boolean;
+  frequency?: MedicationFrequency;
+  reminderTimes?: string[];
+  remindersEnabled?: boolean;
+  notificationIds?: string[];
 }
 
 export interface DailyLog {
