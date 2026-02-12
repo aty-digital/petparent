@@ -126,7 +126,11 @@ export default function AddRecordScreen() {
 
     await addRecord(record);
     setSaving(false);
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   return (
