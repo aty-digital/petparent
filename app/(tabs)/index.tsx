@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import PetSwitcher from '@/components/PetSwitcher';
 
 const C = Colors.dark;
 
@@ -233,6 +234,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        <PetSwitcher />
         <PetCard pet={activePet} />
         <TriageCTA />
 

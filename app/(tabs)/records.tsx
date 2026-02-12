@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import PetSwitcher from '@/components/PetSwitcher';
 import type { MedicalRecord } from '@/lib/types';
 
 const C = Colors.dark;
@@ -99,6 +100,7 @@ export default function RecordsScreen() {
         </Pressable>
       </View>
 
+      <PetSwitcher />
       <View style={styles.filters}>
         <FlatList
           horizontal

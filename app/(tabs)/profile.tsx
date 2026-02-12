@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SvgQRCode from 'react-native-qrcode-svg';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import PetSwitcher from '@/components/PetSwitcher';
 import { apiRequest } from '@/lib/query-client';
 
 const C = Colors.dark;
@@ -151,6 +152,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <PetSwitcher />
         <View style={styles.profileCard}>
           <Pressable onPress={handlePhotoPress} style={styles.avatarWrap} testID="profile-photo">
             <View pointerEvents="none">
