@@ -31,6 +31,7 @@ function MainStack() {
       <Stack.Screen name="add-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="daily-tracker" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="edit-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
     </Stack>
   );
 }

@@ -23,16 +23,28 @@ export default function PetSwitcher() {
           <Text style={styles.welcomeLabel}>Pet Parent</Text>
           <Text style={styles.ownerName}>{userName || 'My Pets'}</Text>
         </View>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/add-pet');
-          }}
-          style={styles.addButton}
-          testID="header-add-pet"
-        >
-          <Ionicons name="add-circle" size={28} color={C.accent} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/add-pet');
+            }}
+            style={styles.addButton}
+            testID="header-add-pet"
+          >
+            <Ionicons name="add-circle" size={28} color={C.accent} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/settings');
+            }}
+            hitSlop={8}
+            testID="header-settings"
+          >
+            <Ionicons name="settings-outline" size={22} color={C.textSecondary} />
+          </Pressable>
+        </View>
       </View>
       <ScrollView
         horizontal
@@ -106,6 +118,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: C.text,
     marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   addButton: {
     width: 44,
