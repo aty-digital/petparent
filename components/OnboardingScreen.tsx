@@ -196,11 +196,11 @@ export default function OnboardingScreen() {
   };
 
   const renderWelcome = () => (
-    <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
+    <View style={[styles.centeredContainer, { paddingTop: topInset + 20 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
         <PawImage size={280} />
       </Animated.View>
-      <View style={{ marginBottom: 28 }}>
+      <View style={{ marginBottom: 16 }}>
         <BrandLogo size="large" showPaw={false} showText={true} showSubtitle={true} />
       </View>
 
@@ -701,8 +701,8 @@ const styles = StyleSheet.create({
 
   logoContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 0,
   },
   featureList: {
     gap: 14,
