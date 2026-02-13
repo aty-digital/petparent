@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
-import BrandLogo, { PawWithPulse } from '@/components/BrandLogo';
+import BrandLogo, { PawImage } from '@/components/BrandLogo';
 import { usePets, generateId, type UserRole } from '@/lib/pet-context';
 import type { Pet } from '@/lib/types';
 
@@ -198,7 +198,7 @@ export default function OnboardingScreen() {
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
-        <PawWithPulse scale={1.4} />
+        <PawImage size={140} />
       </Animated.View>
       <View style={{ marginBottom: 28 }}>
         <BrandLogo size="large" showPaw={false} showText={true} showSubtitle={true} />
@@ -492,7 +492,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.petAvatarSection}>
             <View style={styles.petAvatarCircle}>
-              <PawWithPulse scale={0.5} />
+              <PawImage size={50} />
             </View>
           </View>
 
@@ -629,7 +629,7 @@ export default function OnboardingScreen() {
   const renderComplete = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 60 }]}>
       <Animated.View style={[styles.completeCheckContainer, { transform: [{ scale: checkScale }] }]}>
-        <PawWithPulse scale={1.2} />
+        <PawImage size={120} />
       </Animated.View>
 
       <Text style={styles.completeTitle}>You're All Set!</Text>
