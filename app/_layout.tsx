@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { PetProvider, usePets } from "@/lib/pet-context";
+import { SubscriptionProvider } from "@/lib/subscription-context";
 import OnboardingScreen from "@/components/OnboardingScreen";
 import {
   useFonts,
@@ -78,8 +79,10 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
             <PetProvider>
-              <StatusBar style="dark" />
-              <RootLayoutNav />
+              <SubscriptionProvider>
+                <StatusBar style="dark" />
+                <RootLayoutNav />
+              </SubscriptionProvider>
             </PetProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>

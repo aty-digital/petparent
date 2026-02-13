@@ -11,12 +11,14 @@ import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import BrandLogo, { PawImage } from '@/components/BrandLogo';
 import { usePets, generateId, type UserRole } from '@/lib/pet-context';
+import { useSubscription } from '@/lib/subscription-context';
+import PaywallScreen from '@/components/PaywallScreen';
 import type { Pet } from '@/lib/types';
 
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'welcome' | 'signup' | 'login' | 'role' | 'petcount' | 'petcreate' | 'complete';
+type Step = 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'complete';
 
 const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = [
   { key: 'dog', label: 'Dog', icon: 'paw' },
@@ -37,6 +39,7 @@ export default function OnboardingScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const { signup, login, setUserRole, addPet, completeOnboarding } = usePets();
+  const { tier, canAddMorePets } = useSubscription();
 
   const [step, setStep] = useState<Step>('welcome');
 
@@ -141,7 +144,7 @@ export default function OnboardingScreen() {
     setSelectedRole(role);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await setUserRole(role);
-    setTimeout(() => animateTransition('petcount'), 300);
+    setTimeout(() => animateTransition('paywall'), 300);
   };
 
   const handlePetCountNext = () => {
@@ -471,12 +474,23 @@ export default function OnboardingScreen() {
 
         <Pressable
           style={styles.petCountBtn}
-          onPress={() => { if (petCount < 10) { setPetCount(prev => prev + 1); Haptics.selectionAsync(); } }}
-          disabled={petCount >= 10}
+          onPress={() => {
+            const maxPets = tier === 'premium' ? 10 : 1;
+            if (petCount < maxPets) { setPetCount(prev => prev + 1); Haptics.selectionAsync(); }
+          }}
+          disabled={petCount >= (tier === 'premium' ? 10 : 1)}
         >
-          <Ionicons name="add" size={28} color={petCount >= 10 ? C.textMuted : C.accent} />
+          <Ionicons name="add" size={28} color={petCount >= (tier === 'premium' ? 10 : 1) ? C.textMuted : C.accent} />
         </Pressable>
       </View>
+
+      {tier === 'free' && (
+        <View style={{ backgroundColor: C.warningSoft, borderRadius: 10, padding: 12, marginTop: 8, marginHorizontal: 4 }}>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: C.warning, textAlign: 'center', lineHeight: 18 }}>
+            Free plan allows 1 pet profile. Upgrade to Premium for unlimited pets.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.petDotsRow}>
         {Array.from({ length: petCount }).map((_, i) => (
@@ -700,6 +714,18 @@ export default function OnboardingScreen() {
       case 'signup': return renderSignup();
       case 'login': return renderLogin();
       case 'role': return renderRole();
+      case 'paywall': return (
+        <PaywallScreen
+          onComplete={() => {
+            if (tier === 'free') {
+              setPetCount(1);
+            }
+            animateTransition('petcount');
+          }}
+          showBackButton={true}
+          onBack={() => animateTransition('role')}
+        />
+      );
       case 'petcount': return renderPetCount();
       case 'petcreate': return renderPetCreate();
       case 'complete': return renderComplete();
@@ -708,9 +734,13 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        {renderStep()}
-      </Animated.View>
+      {step === 'paywall' ? (
+        renderStep()
+      ) : (
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          {renderStep()}
+        </Animated.View>
+      )}
     </View>
   );
 }
