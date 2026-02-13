@@ -27,7 +27,7 @@ function PawImage({ size = 100 }: { size?: number }) {
 }
 
 export default function BrandLogo({ size = 'large', showPaw = true, showText = true, showSubtitle = true }: BrandLogoProps) {
-  const pawSize = size === 'large' ? 140 : size === 'medium' ? 100 : 60;
+  const pawSize = size === 'large' ? 180 : size === 'medium' ? 120 : 70;
   const titleSize = size === 'large' ? 36 : size === 'medium' ? 28 : 20;
   const subtitleSize = size === 'large' ? 16 : size === 'medium' ? 13 : 11;
 
