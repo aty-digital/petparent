@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Path, Ellipse } from 'react-native-svg';
+import Svg, { Path, Ellipse, G } from 'react-native-svg';
 import Colors from '@/constants/colors';
 
 const C = Colors.dark;
@@ -20,18 +20,26 @@ function PawWithPulse({ scale = 1 }: { scale?: number }) {
   const h = 100 * scale;
   return (
     <Svg width={w} height={h} viewBox="0 0 100 100">
-      <Ellipse cx="22" cy="22" rx="9" ry="12" fill={PAW_COLOR} />
-      <Ellipse cx="40" cy="12" rx="9" ry="12" fill={PAW_COLOR} />
-      <Ellipse cx="60" cy="12" rx="9" ry="12" fill={PAW_COLOR} />
-      <Ellipse cx="78" cy="22" rx="9" ry="12" fill={PAW_COLOR} />
+      <G rotation="-25" origin="20, 20">
+        <Ellipse cx="20" cy="20" rx="8" ry="13" fill={PAW_COLOR} />
+      </G>
+      <G rotation="-8" origin="38, 8">
+        <Ellipse cx="38" cy="8" rx="9" ry="14" fill={PAW_COLOR} />
+      </G>
+      <G rotation="8" origin="62, 8">
+        <Ellipse cx="62" cy="8" rx="9" ry="14" fill={PAW_COLOR} />
+      </G>
+      <G rotation="25" origin="80, 20">
+        <Ellipse cx="80" cy="20" rx="8" ry="13" fill={PAW_COLOR} />
+      </G>
       <Path
-        d="M50 38 C36 38, 20 50, 22 65 C24 78, 36 85, 42 82 C46 80, 48 76, 50 76 C52 76, 54 80, 58 82 C64 85, 76 78, 78 65 C80 50, 64 38, 50 38Z"
+        d="M50 35 C34 35, 16 48, 18 66 C19 74, 26 82, 34 84 C39 85, 43 80, 47 77 C49 76, 51 76, 53 77 C57 80, 61 85, 66 84 C74 82, 81 74, 82 66 C84 48, 66 35, 50 35Z"
         fill={PAW_COLOR}
       />
       <Path
-        d="M28 62 L38 62 L42 52 L46 72 L50 58 L54 66 L58 62 L72 62"
+        d="M26 63 L36 63 L40 53 L45 73 L50 58 L55 67 L60 63 L74 63"
         stroke={PULSE_COLOR}
-        strokeWidth="3"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
