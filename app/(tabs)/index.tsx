@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
+import BrandLogo from '@/components/BrandLogo';
 import { usePets } from '@/lib/pet-context';
 
 const C = Colors.dark;
@@ -186,10 +187,8 @@ export default function HomeScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="paw" size={48} color={C.accent} />
-          </View>
-          <Text style={styles.emptyTitle}>Welcome to PetParent</Text>
+          <BrandLogo size="medium" showText={true} showSubtitle={false} />
+          <Text style={styles.emptyTitle}>Welcome!</Text>
           <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI symptom triage, and more.</Text>
           <Pressable
             style={styles.addPetButton}

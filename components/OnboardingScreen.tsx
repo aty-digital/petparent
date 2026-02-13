@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
+import BrandLogo, { PawWithPulse } from '@/components/BrandLogo';
 import { usePets, generateId, type UserRole } from '@/lib/pet-context';
 import type { Pet } from '@/lib/types';
 
@@ -197,15 +198,8 @@ export default function OnboardingScreen() {
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
-        <LinearGradient colors={['rgba(45, 106, 79, 0.2)', 'rgba(45, 106, 79, 0.05)']} style={styles.logoGlow}>
-          <View style={styles.logoInner}>
-            <Ionicons name="paw" size={48} color={C.accent} />
-          </View>
-        </LinearGradient>
+        <BrandLogo size="large" showText={true} showSubtitle={true} />
       </Animated.View>
-
-      <Text style={styles.brandTitle}>PetParent</Text>
-      <Text style={styles.brandSubtitle}>AI Vet Assistant & Pet Health Log</Text>
 
       <View style={styles.featureList}>
         {[
@@ -706,39 +700,8 @@ const styles = StyleSheet.create({
 
   logoContainer: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 24,
-  },
-  logoGlow: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: C.accentSoft,
-    borderWidth: 2,
-    borderColor: C.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 36,
-    color: C.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  brandSubtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: C.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
+    marginTop: 20,
+    marginBottom: 28,
   },
   featureList: {
     gap: 14,
