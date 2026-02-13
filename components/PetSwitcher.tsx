@@ -20,7 +20,7 @@ export default function PetSwitcher() {
     <View style={[styles.wrapper, { paddingTop: topInset + 8 }]}>
       <View style={styles.ownerRow}>
         <View>
-          <Text style={styles.welcomeLabel}>Pet Owner</Text>
+          <Text style={styles.welcomeLabel}>Pet Parent</Text>
           <Text style={styles.ownerName}>{userName || 'My Pets'}</Text>
         </View>
         <Pressable

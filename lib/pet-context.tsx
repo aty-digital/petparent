@@ -35,6 +35,9 @@ interface PetContextValue {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  updateEmail: (email: string) => Promise<void>;
+  updatePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+  deleteAccount: () => Promise<void>;
 }
 
 const PetContext = createContext<PetContextValue | null>(null);
@@ -65,7 +68,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<HealthTask[]>([]);
   const [triageResults, setTriageResults] = useState<TriageResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserNameState] = useState('Pet Owner');
+  const [userName, setUserNameState] = useState('Pet Parent');
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRoleState] = useState<UserRole | null>(null);
@@ -234,13 +237,40 @@ export function PetProvider({ children }: { children: ReactNode }) {
     setOnboardingComplete(false);
     setUserEmail('');
     setUserRoleState(null);
-    setUserNameState('Pet Owner');
+    setUserNameState('Pet Parent');
     await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
   }, []);
 
   const completeOnboarding = useCallback(async () => {
     setOnboardingComplete(true);
     await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+  }, []);
+
+  const updateEmail = useCallback(async (email: string) => {
+    setUserEmail(email);
+    await AsyncStorage.setItem(STORAGE_KEYS.USER_EMAIL, email);
+  }, []);
+
+  const updatePassword = useCallback(async (oldPassword: string, newPassword: string): Promise<boolean> => {
+    const storedPassword = await AsyncStorage.getItem(STORAGE_KEYS.USER_PASSWORD);
+    if (storedPassword !== oldPassword) return false;
+    await AsyncStorage.setItem(STORAGE_KEYS.USER_PASSWORD, newPassword);
+    return true;
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const allKeys = Object.values(STORAGE_KEYS);
+    await AsyncStorage.multiRemove(allKeys);
+    setPets([]);
+    setActivePetIdState('');
+    setRecords([]);
+    setDailyLogs([]);
+    setTasks([]);
+    setTriageResults([]);
+    setUserNameState('Pet Parent');
+    setUserEmail('');
+    setUserRoleState(null);
+    setOnboardingComplete(false);
   }, []);
 
   const value = useMemo(() => ({
@@ -252,13 +282,15 @@ export function PetProvider({ children }: { children: ReactNode }) {
     isLoading, userName, setUserName,
     onboardingComplete, userEmail, userRole, setUserRole,
     signup, login, logout, completeOnboarding,
+    updateEmail, updatePassword, deleteAccount,
   }), [pets, activePet, setActivePetId, addPet, updatePet, deletePet,
     records, addRecord, deleteRecord,
     dailyLogs, addDailyLog, updateDailyLog, getTodayLog,
     tasks, addTask, toggleTask, deleteTask,
     triageResults, addTriageResult, isLoading, userName, setUserName,
     onboardingComplete, userEmail, userRole, setUserRole,
-    signup, login, logout, completeOnboarding]);
+    signup, login, logout, completeOnboarding,
+    updateEmail, updatePassword, deleteAccount]);
 
   return <PetContext.Provider value={value}>{children}</PetContext.Provider>;
 }
