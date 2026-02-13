@@ -198,7 +198,7 @@ export default function OnboardingScreen() {
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
-        <PawImage size={180} />
+        <PawImage size={280} />
       </Animated.View>
       <View style={{ marginBottom: 28 }}>
         <BrandLogo size="large" showPaw={false} showText={true} showSubtitle={true} />
@@ -492,7 +492,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.petAvatarSection}>
             <View style={styles.petAvatarCircle}>
-              <PawImage size={60} />
+              <PawImage size={80} />
             </View>
           </View>
 
@@ -629,7 +629,7 @@ export default function OnboardingScreen() {
   const renderComplete = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 60 }]}>
       <Animated.View style={[styles.completeCheckContainer, { transform: [{ scale: checkScale }] }]}>
-        <PawImage size={160} />
+        <PawImage size={240} />
       </Animated.View>
 
       <Text style={styles.completeTitle}>You're All Set!</Text>
