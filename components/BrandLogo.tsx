@@ -25,11 +25,11 @@ function PawWithPulse({ scale = 1 }: { scale?: number }) {
       <Ellipse cx="60" cy="16" rx="10" ry="15" fill={PAW_COLOR} transform="rotate(10, 60, 16)" />
       <Ellipse cx="78" cy="28" rx="9" ry="14" fill={PAW_COLOR} transform="rotate(30, 78, 28)" />
       <Path
-        d="M50 46 C33 46, 14 58, 16 78 C17 86, 25 95, 34 96 C40 97, 44 91, 47 88 C49 87, 51 87, 53 88 C56 91, 60 97, 66 96 C75 95, 83 86, 84 78 C86 58, 67 46, 50 46Z"
+        d="M50 44 C42 44, 30 44, 20 54 C10 64, 12 78, 20 88 C28 98, 40 100, 46 94 C48 92, 49 90, 50 90 C51 90, 52 92, 54 94 C60 100, 72 98, 80 88 C88 78, 90 64, 80 54 C70 44, 58 44, 50 44Z"
         fill={PAW_COLOR}
       />
       <Path
-        d="M24 76 L36 76 L40 65 L46 86 L50 70 L54 79 L58 76 L76 76"
+        d="M22 72 L34 72 L38 61 L44 82 L50 66 L56 76 L60 72 L78 72"
         stroke={PULSE_COLOR}
         strokeWidth="2.5"
         strokeLinecap="round"
