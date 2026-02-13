@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
+import { useSubscription } from '@/lib/subscription-context';
 import type { Pet } from '@/lib/types';
 
 const C = Colors.dark;
@@ -24,7 +25,9 @@ const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = 
 export default function AddPetScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const { addPet } = usePets();
+  const { addPet, pets } = usePets();
+  const { canAddMorePets, tier } = useSubscription();
+  const allowed = canAddMorePets(pets.length);
 
   const [name, setName] = useState('');
   const [breed, setBreed] = useState('');
@@ -84,6 +87,50 @@ export default function AddPetScreen() {
               <Ionicons name="paw" size={32} color={C.accent} />
             </View>
           </View>
+
+          {!allowed && (
+            <View style={{
+              backgroundColor: C.dangerSoft,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+              alignItems: 'center' as const,
+              gap: 8,
+            }}>
+              <Ionicons name="lock-closed" size={24} color={C.danger} />
+              <Text style={{
+                fontFamily: 'Inter_600SemiBold',
+                fontSize: 15,
+                color: C.danger,
+                textAlign: 'center' as const,
+              }}>
+                Pet Limit Reached
+              </Text>
+              <Text style={{
+                fontFamily: 'Inter_400Regular',
+                fontSize: 13,
+                color: C.textSecondary,
+                textAlign: 'center' as const,
+                lineHeight: 18,
+              }}>
+                Free plan allows 1 pet profile. Upgrade to Premium in Settings for unlimited pets.
+              </Text>
+              <Pressable
+                onPress={() => { router.back(); router.push('/settings'); }}
+                style={{
+                  backgroundColor: C.accent,
+                  borderRadius: 10,
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  marginTop: 4,
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' }}>
+                  View Plans
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           <Text style={styles.label}>Name *</Text>
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Pet's name" placeholderTextColor={C.textMuted} />
@@ -167,12 +214,14 @@ export default function AddPetScreen() {
           <Text style={styles.label}>Phone</Text>
           <TextInput style={styles.input} value={vetPhone} onChangeText={setVetPhone} placeholder="(555) 123-4567" placeholderTextColor={C.textMuted} keyboardType="phone-pad" />
 
-          <Pressable onPress={handleSave} disabled={!isValid}>
+          <Pressable onPress={handleSave} disabled={!isValid || !allowed}>
             <LinearGradient
-              colors={isValid ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+              colors={isValid && allowed ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
               style={styles.saveBtn}
             >
-              <Text style={[styles.saveBtnText, !isValid && { color: C.textMuted }]}>Save Pet</Text>
+              <Text style={[styles.saveBtnText, (!isValid || !allowed) && { color: C.textMuted }]}>
+                {allowed ? 'Save Pet' : 'Upgrade to Add'}
+              </Text>
             </LinearGradient>
           </Pressable>
         </ScrollView>

@@ -9,6 +9,8 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import { useSubscription } from '@/lib/subscription-context';
+import PaywallScreen from '@/components/PaywallScreen';
 
 const C = Colors.dark;
 
@@ -26,6 +28,9 @@ export default function SettingsScreen() {
     userName, setUserName, userEmail, userRole,
     updateEmail, updatePassword, logout, deleteAccount, pets,
   } = usePets();
+  const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases } = useSubscription();
+
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -128,6 +133,16 @@ export default function SettingsScreen() {
       ]
     );
   };
+
+  if (showPaywall) {
+    return (
+      <PaywallScreen
+        onComplete={() => setShowPaywall(false)}
+        showBackButton={true}
+        onBack={() => setShowPaywall(false)}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -255,6 +270,94 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>SUBSCRIPTION</Text>
+            <View style={styles.card}>
+              <View style={styles.row}>
+                <View style={styles.rowLeft}>
+                  <View style={[styles.iconCircle, tier === 'premium' && { backgroundColor: 'rgba(224, 159, 62, 0.12)' }]}>
+                    <Ionicons name={tier === 'premium' ? 'shield-checkmark' : 'shield-outline'} size={18} color={tier === 'premium' ? C.warning : C.accent} />
+                  </View>
+                  <View style={styles.rowContent}>
+                    <Text style={styles.rowLabel}>Current Plan</Text>
+                    <Text style={[styles.rowValue, tier === 'premium' && { color: C.warning }]}>
+                      {tier === 'premium' ? 'Premium' : 'Free'}
+                    </Text>
+                  </View>
+                </View>
+                {tier === 'free' && (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowPaywall(true);
+                    }}
+                    style={{
+                      backgroundColor: C.accent,
+                      borderRadius: 8,
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                    }}
+                    testID="settings-upgrade"
+                  >
+                    <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#FFFFFF' }}>Upgrade</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {tier === 'free' && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.row}>
+                    <View style={styles.rowLeft}>
+                      <View style={styles.iconCircle}>
+                        <Ionicons name="paw" size={18} color={C.accent} />
+                      </View>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>Pet Profiles</Text>
+                        <Text style={styles.rowValue}>{pets.length} / 1</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.divider} />
+                  <View style={styles.row}>
+                    <View style={styles.rowLeft}>
+                      <View style={styles.iconCircle}>
+                        <MaterialCommunityIcons name="stethoscope" size={18} color={C.accent} />
+                      </View>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>AI Triage Sessions (this month)</Text>
+                        <Text style={styles.rowValue}>{triageUsedThisMonth} / {maxFreeTriagePerMonth}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </>
+              )}
+
+              <View style={styles.divider} />
+              <Pressable
+                style={styles.row}
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const success = await restorePurchases();
+                  if (success) {
+                    Alert.alert('Restored', 'Your premium subscription has been restored.');
+                  } else {
+                    Alert.alert('No Subscription Found', 'We could not find an active subscription to restore.');
+                  }
+                }}
+                testID="settings-restore"
+              >
+                <View style={styles.rowLeft}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="refresh" size={18} color={C.accent} />
+                  </View>
+                  <Text style={styles.rowActionText}>Restore Purchases</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+              </Pressable>
             </View>
           </View>
 

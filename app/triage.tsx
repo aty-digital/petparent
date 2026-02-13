@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
+import { useSubscription } from '@/lib/subscription-context';
 import { apiRequest } from '@/lib/query-client';
 import type { TriageResult } from '@/lib/types';
 
@@ -29,9 +30,11 @@ export default function TriageScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const { activePet, addTriageResult, addRecord } = usePets();
+  const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier, recordTriageUsage } = useSubscription();
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const triageAllowed = canUseTriageThisMonth();
 
   const handleTriage = async () => {
     if (!symptoms.trim() || !activePet) return;
@@ -66,6 +69,7 @@ export default function TriageScreen() {
       };
 
       await addTriageResult(result);
+      await recordTriageUsage();
       await addRecord({
         id: generateId(),
         petId: activePet.id,
@@ -119,6 +123,46 @@ export default function TriageScreen() {
             </View>
           )}
 
+          {tier === 'free' && (
+            <View style={{
+              backgroundColor: triageAllowed ? C.accentSoft : C.dangerSoft,
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 16,
+              flexDirection: 'row' as const,
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <Ionicons
+                name={triageAllowed ? 'information-circle' : 'lock-closed'}
+                size={20}
+                color={triageAllowed ? C.accent : C.danger}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontFamily: 'Inter_500Medium',
+                  fontSize: 13,
+                  color: triageAllowed ? C.text : C.danger,
+                }}>
+                  {triageAllowed
+                    ? `${triageUsedThisMonth} of ${maxFreeTriagePerMonth} free sessions used this month`
+                    : `Monthly limit reached (${maxFreeTriagePerMonth}/${maxFreeTriagePerMonth})`
+                  }
+                </Text>
+                {!triageAllowed && (
+                  <Text style={{
+                    fontFamily: 'Inter_400Regular',
+                    fontSize: 12,
+                    color: C.textMuted,
+                    marginTop: 2,
+                  }}>
+                    Upgrade to Premium for unlimited triage sessions
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
+
           <Text style={styles.label}>Describe the symptoms</Text>
           <Text style={styles.sublabel}>Be as detailed as possible - include when symptoms started, severity, and any changes in behavior.</Text>
 
@@ -152,7 +196,7 @@ export default function TriageScreen() {
 
           <Pressable
             onPress={handleTriage}
-            disabled={!symptoms.trim() || loading}
+            disabled={!symptoms.trim() || loading || !triageAllowed}
             style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <LinearGradient
