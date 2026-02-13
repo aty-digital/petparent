@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView,
-  KeyboardAvoidingView, Animated, Dimensions, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Animated, Dimensions, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import BrandLogo, { PawImage } from '@/components/BrandLogo';
 import { usePets, generateId, type UserRole } from '@/lib/pet-context';
@@ -57,6 +58,7 @@ export default function OnboardingScreen() {
   const [petWeightUnit, setPetWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [petGender, setPetGender] = useState<'male' | 'female'>('male');
   const [petColor, setPetColor] = useState('');
+  const [petPhotoUri, setPetPhotoUri] = useState<string | undefined>(undefined);
 
   const [loading, setLoading] = useState(false);
 
@@ -157,6 +159,20 @@ export default function OnboardingScreen() {
     setPetWeightUnit('kg');
     setPetGender('male');
     setPetColor('');
+    setPetPhotoUri(undefined);
+  };
+
+  const pickPetPhoto = async () => {
+    Haptics.selectionAsync();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPetPhotoUri(result.assets[0].uri);
+    }
   };
 
   const handleSavePet = async () => {
@@ -173,6 +189,7 @@ export default function OnboardingScreen() {
       weightUnit: petWeightUnit,
       gender: petGender,
       color: petColor.trim() || 'Unknown',
+      ...(petPhotoUri ? { photoUri: petPhotoUri } : {}),
     };
     await addPet(pet);
 
@@ -490,11 +507,19 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          <View style={styles.petAvatarSection}>
+          <Pressable onPress={pickPetPhoto} style={styles.petAvatarSection} testID="pet-photo-picker">
             <View style={styles.petAvatarCircle}>
-              <PawImage size={80} />
+              {petPhotoUri ? (
+                <Image source={{ uri: petPhotoUri }} style={styles.petAvatarImage} />
+              ) : (
+                <PawImage size={60} />
+              )}
+              <View style={styles.cameraIconBadge}>
+                <Ionicons name="camera" size={14} color="#FFFFFF" />
+              </View>
             </View>
-          </View>
+            <Text style={styles.photoHintText}>Add photo (optional)</Text>
+          </Pressable>
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Name *</Text>
@@ -966,14 +991,39 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   petAvatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: C.accentSoft,
     borderWidth: 2,
     borderColor: C.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  petAvatarImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  cameraIconBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  photoHintText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.textMuted,
+    marginTop: 6,
   },
   chipRow: {
     flexDirection: 'row',
