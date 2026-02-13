@@ -10,6 +10,7 @@ const PULSE_COLOR = '#2D6A4F';
 
 interface BrandLogoProps {
   size?: 'small' | 'medium' | 'large';
+  showPaw?: boolean;
   showText?: boolean;
   showSubtitle?: boolean;
 }
@@ -19,9 +20,10 @@ function PawWithPulse({ scale = 1 }: { scale?: number }) {
   const h = 100 * scale;
   return (
     <Svg width={w} height={h} viewBox="0 0 100 100">
-      <Ellipse cx="30" cy="18" rx="10" ry="13" fill={PAW_COLOR} />
-      <Ellipse cx="50" cy="12" rx="10" ry="13" fill={PAW_COLOR} />
-      <Ellipse cx="70" cy="18" rx="10" ry="13" fill={PAW_COLOR} />
+      <Ellipse cx="22" cy="22" rx="9" ry="12" fill={PAW_COLOR} />
+      <Ellipse cx="40" cy="12" rx="9" ry="12" fill={PAW_COLOR} />
+      <Ellipse cx="60" cy="12" rx="9" ry="12" fill={PAW_COLOR} />
+      <Ellipse cx="78" cy="22" rx="9" ry="12" fill={PAW_COLOR} />
       <Path
         d="M50 38 C36 38, 20 50, 22 65 C24 78, 36 85, 42 82 C46 80, 48 76, 50 76 C52 76, 54 80, 58 82 C64 85, 76 78, 78 65 C80 50, 64 38, 50 38Z"
         fill={PAW_COLOR}
@@ -38,14 +40,14 @@ function PawWithPulse({ scale = 1 }: { scale?: number }) {
   );
 }
 
-export default function BrandLogo({ size = 'large', showText = true, showSubtitle = true }: BrandLogoProps) {
+export default function BrandLogo({ size = 'large', showPaw = true, showText = true, showSubtitle = true }: BrandLogoProps) {
   const scale = size === 'large' ? 1.4 : size === 'medium' ? 1 : 0.7;
   const titleSize = size === 'large' ? 36 : size === 'medium' ? 28 : 20;
   const subtitleSize = size === 'large' ? 16 : size === 'medium' ? 13 : 11;
 
   return (
     <View style={styles.container}>
-      <PawWithPulse scale={scale} />
+      {showPaw && <PawWithPulse scale={scale} />}
       {showText && (
         <View style={styles.textRow}>
           <Text style={[styles.titlePet, { fontSize: titleSize }]}>Pet</Text>

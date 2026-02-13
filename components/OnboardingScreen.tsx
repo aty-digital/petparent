@@ -198,8 +198,9 @@ export default function OnboardingScreen() {
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
-        <BrandLogo size="large" showText={true} showSubtitle={true} />
+        <PawWithPulse scale={1.4} />
       </Animated.View>
+      <BrandLogo size="large" showPaw={false} showText={true} showSubtitle={true} />
 
       <View style={styles.featureList}>
         {[
