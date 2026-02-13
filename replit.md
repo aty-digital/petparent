@@ -2,7 +2,7 @@
 
 ## Overview
 
-PetParent (AI Vet Assistant & Pet Health Log) is a pet health management mobile application built with Expo (React Native). It allows pet owners to track their pets' health through medical records, daily wellness logging, health task scheduling, and an AI-powered symptom triage system. The app uses a dark green-themed UI with a focus on pet wellness tracking and veterinary guidance.
+PetParent (AI Vet Assistant & Pet Health Log) is a pet health management mobile application built with Expo (React Native). It allows pet parents to track their pets' health through medical records, daily wellness logging, health task scheduling, and an AI-powered symptom triage system. The app uses a dark green-themed UI with a focus on pet wellness tracking and veterinary guidance.
 
 Key features:
 - **Onboarding Flow**: Multi-step guided onboarding with sign-up/login, role selection (Pet Parent/Sitter/Vet), pet count picker, and multi-pet profile creation loop. Gates main app until completed.
@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend (Expo/React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, using expo-router for file-based routing
-- **Navigation**: Tab-based layout with 4 tabs (Home, Records, Tracker, Profile) plus modal screens for forms (add-pet, add-record, add-task, triage, daily-tracker, edit-pet)
+- **Navigation**: Tab-based layout with 4 tabs (Home, Records, Tracker, Profile) plus modal screens for forms (add-pet, add-record, add-task, triage, daily-tracker, edit-pet, settings)
 - **State Management**: React Context (`PetProvider` in `lib/pet-context.tsx`) manages all pet-related state. No Redux or external state library.
 - **Local Storage**: All pet data (pets, records, daily logs, tasks, triage results) persists via `@react-native-async-storage/async-storage` with keys prefixed `@pawguard_`. This is the primary data store for user content — not the PostgreSQL database.
 - **Styling**: Inline StyleSheet with a consistent dark theme defined in `constants/colors.ts`. Uses Inter font family loaded via `@expo-google-fonts/inter`.
