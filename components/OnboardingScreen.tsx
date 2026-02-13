@@ -200,7 +200,7 @@ export default function OnboardingScreen() {
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: Animated.multiply(logoScale, pulseAnim) }], opacity: logoOpacity }]}>
         <PawImage size={280} />
       </Animated.View>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: 10 }}>
         <BrandLogo size="large" showPaw={false} showText={true} showSubtitle={true} />
       </View>
 
@@ -701,8 +701,8 @@ const styles = StyleSheet.create({
 
   logoContainer: {
     alignItems: 'center',
-    marginTop: 0,
-    marginBottom: 0,
+    marginTop: -10,
+    marginBottom: -60,
   },
   featureList: {
     gap: 14,
