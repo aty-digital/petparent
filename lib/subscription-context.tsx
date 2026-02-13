@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
+import { usePets } from './pet-context';
 
 export type SubscriptionTier = 'free' | 'premium';
 
@@ -25,11 +26,10 @@ interface SubscriptionContextValue {
 
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
-const STORAGE_KEYS = {
-  SUBSCRIPTION_TIER: '@pawguard_subscription_tier',
-  TRIAGE_USAGE: '@pawguard_triage_usage',
-  PAYWALL_COMPLETE: '@pawguard_paywall_complete',
-};
+function subKey(email: string, suffix: string): string {
+  const sanitized = email.toLowerCase().trim();
+  return `@pawguard_user_${sanitized}_${suffix}`;
+}
 
 const MAX_FREE_PETS = 1;
 const MAX_FREE_TRIAGE_PER_MONTH = 3;
@@ -50,6 +50,7 @@ function getCurrentMonth(): string {
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
+  const { userEmail } = usePets();
   const [tier, setTier] = useState<SubscriptionTier>('free');
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -59,18 +60,37 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     initializeSubscription();
-  }, []);
+  }, [userEmail]);
 
   const initializeSubscription = async () => {
+    setIsLoading(true);
+
+    if (!userEmail) {
+      setTier('free');
+      setTriageUsage({ month: getCurrentMonth(), count: 0 });
+      setPaywallCompleteState(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const [savedTier, savedUsage, savedPaywall] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.SUBSCRIPTION_TIER),
-        AsyncStorage.getItem(STORAGE_KEYS.TRIAGE_USAGE),
-        AsyncStorage.getItem(STORAGE_KEYS.PAYWALL_COMPLETE),
+        AsyncStorage.getItem(subKey(userEmail, 'subscription_tier')),
+        AsyncStorage.getItem(subKey(userEmail, 'triage_usage')),
+        AsyncStorage.getItem(subKey(userEmail, 'paywall_complete')),
       ]);
 
-      if (savedTier === 'premium') setTier('premium');
-      if (savedPaywall === 'true') setPaywallCompleteState(true);
+      if (savedTier === 'premium') {
+        setTier('premium');
+      } else {
+        setTier('free');
+      }
+
+      if (savedPaywall === 'true') {
+        setPaywallCompleteState(true);
+      } else {
+        setPaywallCompleteState(false);
+      }
 
       if (savedUsage) {
         const usage: TriageUsage = JSON.parse(savedUsage);
@@ -80,8 +100,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         } else {
           const reset = { month: currentMonth, count: 0 };
           setTriageUsage(reset);
-          await AsyncStorage.setItem(STORAGE_KEYS.TRIAGE_USAGE, JSON.stringify(reset));
+          await AsyncStorage.setItem(subKey(userEmail, 'triage_usage'), JSON.stringify(reset));
         }
+      } else {
+        setTriageUsage({ month: getCurrentMonth(), count: 0 });
       }
 
       if (Platform.OS !== 'web') {
@@ -116,21 +138,27 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const checkEntitlements = (customerInfo: CustomerInfo) => {
     if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
       setTier('premium');
-      AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION_TIER, 'premium');
+      if (userEmail) {
+        AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+      }
     }
   };
 
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
     if (!rcInitialized) {
       setTier('premium');
-      await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION_TIER, 'premium');
+      if (userEmail) {
+        await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+      }
       return true;
     }
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
         setTier('premium');
-        await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION_TIER, 'premium');
+        if (userEmail) {
+          await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+        }
         return true;
       }
       return false;
@@ -139,7 +167,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.error('Purchase failed:', e);
       return false;
     }
-  }, [rcInitialized]);
+  }, [rcInitialized, userEmail]);
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     if (!rcInitialized) return false;
@@ -147,7 +175,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       const customerInfo = await Purchases.restorePurchases();
       if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
         setTier('premium');
-        await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION_TIER, 'premium');
+        if (userEmail) {
+          await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+        }
         return true;
       }
       return false;
@@ -155,7 +185,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.error('Restore failed:', e);
       return false;
     }
-  }, [rcInitialized]);
+  }, [rcInitialized, userEmail]);
 
   const canAddMorePets = useCallback((currentPetCount: number): boolean => {
     if (tier === 'premium') return true;
@@ -182,13 +212,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       count: triageUsage.month === currentMonth ? triageUsage.count + 1 : 1,
     };
     setTriageUsage(newUsage);
-    await AsyncStorage.setItem(STORAGE_KEYS.TRIAGE_USAGE, JSON.stringify(newUsage));
-  }, [triageUsage]);
+    if (userEmail) {
+      await AsyncStorage.setItem(subKey(userEmail, 'triage_usage'), JSON.stringify(newUsage));
+    }
+  }, [triageUsage, userEmail]);
 
   const setPaywallComplete = useCallback(async () => {
     setPaywallCompleteState(true);
-    await AsyncStorage.setItem(STORAGE_KEYS.PAYWALL_COMPLETE, 'true');
-  }, []);
+    if (userEmail) {
+      await AsyncStorage.setItem(subKey(userEmail, 'paywall_complete'), 'true');
+    }
+  }, [userEmail]);
 
   const monthlyPackage = useMemo(() =>
     packages.find(p => p.packageType === 'MONTHLY') || null,

@@ -49,6 +49,7 @@ export default function OnboardingScreen() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [signupError, setSignupError] = useState('');
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [petCount, setPetCount] = useState(1);
@@ -110,12 +111,18 @@ export default function OnboardingScreen() {
   const handleSignup = async () => {
     if (!signName.trim() || !signEmail.trim() || !signPassword.trim()) return;
     setLoading(true);
+    setSignupError('');
     try {
-      await signup(signName.trim(), signEmail.trim(), signPassword);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      animateTransition('role');
+      const result = await signup(signName.trim(), signEmail.trim(), signPassword);
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        animateTransition('role');
+      } else {
+        setSignupError(result.error || 'Something went wrong.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } catch (e) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      setSignupError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -315,6 +322,15 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
+        {signupError ? (
+          <View style={{ backgroundColor: C.dangerSoft, borderRadius: 10, padding: 12, marginBottom: 12, flexDirection: 'row' as const, alignItems: 'center', gap: 8 }}>
+            <Ionicons name="alert-circle" size={18} color={C.danger} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.danger }}>{signupError}</Text>
+            </View>
+          </View>
+        ) : null}
+
         <Pressable onPress={handleSignup} disabled={loading || !signName.trim() || !signEmail.trim() || !signPassword.trim()} testID="signup-submit">
           <LinearGradient
             colors={(signName.trim() && signEmail.trim() && signPassword.trim()) ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
@@ -329,7 +345,7 @@ export default function OnboardingScreen() {
           </LinearGradient>
         </Pressable>
 
-        <Pressable onPress={() => animateTransition('login')} style={{ marginTop: 16, alignItems: 'center' }}>
+        <Pressable onPress={() => { setSignupError(''); animateTransition('login'); }} style={{ marginTop: 16, alignItems: 'center' }}>
           <Text style={styles.switchAuthText}>Already have an account? <Text style={{ color: C.accent }}>Log In</Text></Text>
         </Pressable>
 
