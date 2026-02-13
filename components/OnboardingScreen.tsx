@@ -489,7 +489,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.petAvatarSection}>
             <View style={styles.petAvatarCircle}>
-              <Ionicons name="paw" size={28} color={C.accent} />
+              <PawWithPulse scale={0.5} />
             </View>
           </View>
 
@@ -626,9 +626,7 @@ export default function OnboardingScreen() {
   const renderComplete = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 60 }]}>
       <Animated.View style={[styles.completeCheckContainer, { transform: [{ scale: checkScale }] }]}>
-        <LinearGradient colors={[C.accent, C.accentDim]} style={styles.completeCheckCircle}>
-          <Ionicons name="checkmark" size={48} color="#FFFFFF" />
-        </LinearGradient>
+        <PawWithPulse scale={1.2} />
       </Animated.View>
 
       <Text style={styles.completeTitle}>You're All Set!</Text>
