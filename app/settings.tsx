@@ -96,6 +96,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            router.replace('/');
             await logout();
           },
         },
@@ -123,6 +124,7 @@ export default function SettingsScreen() {
                   style: 'destructive',
                   onPress: async () => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                    router.replace('/');
                     await deleteAccount();
                   },
                 },
