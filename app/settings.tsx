@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable, Platform, TextInput,
-  Alert, Linking, KeyboardAvoidingView,
+  Alert, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -320,7 +320,10 @@ export default function SettingsScreen() {
             <View style={styles.card}>
               <Pressable
                 style={styles.row}
-                onPress={() => Linking.openURL('https://petparent.app/privacy')}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/privacy-policy');
+                }}
                 testID="settings-privacy"
               >
                 <View style={styles.rowLeft}>
@@ -329,14 +332,17 @@ export default function SettingsScreen() {
                   </View>
                   <Text style={styles.rowActionText}>Privacy Policy</Text>
                 </View>
-                <Ionicons name="open-outline" size={16} color={C.textMuted} />
+                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
               </Pressable>
 
               <View style={styles.divider} />
 
               <Pressable
                 style={styles.row}
-                onPress={() => Linking.openURL('https://petparent.app/terms')}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/terms-of-service');
+                }}
                 testID="settings-terms"
               >
                 <View style={styles.rowLeft}>
@@ -345,7 +351,7 @@ export default function SettingsScreen() {
                   </View>
                   <Text style={styles.rowActionText}>Terms of Service</Text>
                 </View>
-                <Ionicons name="open-outline" size={16} color={C.textMuted} />
+                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
               </Pressable>
 
               <View style={styles.divider} />
