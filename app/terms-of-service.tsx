@@ -39,7 +39,7 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.updated}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={styles.intro}>
-          Welcome to PetParent. By downloading, installing, or using the PetParent mobile application ("the app"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the app.
+          Welcome to PetParent, powered by ATY Digital. By downloading, installing, or using the PetParent mobile application ("the app"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the app.
         </Text>
 
         <Text style={styles.sectionTitle}>1. About PetParent</Text>
@@ -117,11 +117,16 @@ export default function TermsOfServiceScreen() {
           These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law principles.
         </Text>
 
-        <Text style={styles.sectionTitle}>13. Contact Us</Text>
+        <Text style={styles.sectionTitle}>13. About Us</Text>
+        <Text style={styles.body}>
+          PetParent is powered by ATY Digital. ATY Digital owns, develops, and operates the PetParent application. All rights, title, and interest in the app are held by ATY Digital.
+        </Text>
+
+        <Text style={styles.sectionTitle}>14. Contact Us</Text>
         <Text style={styles.body}>
           If you have questions about these Terms of Service, please contact us at:
         </Text>
-        <Text style={styles.contact}>support@petparent.app</Text>
+        <Text style={styles.contact}>hello@atydigital.com</Text>
       </ScrollView>
     </View>
   );

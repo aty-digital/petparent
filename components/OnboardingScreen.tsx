@@ -329,6 +329,8 @@ export default function OnboardingScreen() {
         <Pressable onPress={() => animateTransition('login')} style={{ marginTop: 16, alignItems: 'center' }}>
           <Text style={styles.switchAuthText}>Already have an account? <Text style={{ color: C.accent }}>Log In</Text></Text>
         </Pressable>
+
+        <Text style={styles.poweredBy}>Powered by ATY Digital</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -402,6 +404,8 @@ export default function OnboardingScreen() {
         <Pressable onPress={() => animateTransition('signup')} style={{ marginTop: 16, alignItems: 'center' }}>
           <Text style={styles.switchAuthText}>New here? <Text style={{ color: C.accent }}>Create Account</Text></Text>
         </Pressable>
+
+        <Text style={styles.poweredBy}>Powered by ATY Digital</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -851,6 +855,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     color: C.textSecondary,
+  },
+  poweredBy: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.textMuted,
+    textAlign: 'center' as const,
+    marginTop: 24,
   },
   errorBanner: {
     flexDirection: 'row',

@@ -39,7 +39,7 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.updated}>Last updated: {LAST_UPDATED}</Text>
 
         <Text style={styles.intro}>
-          PetParent ("we," "our," or "the app") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use the PetParent mobile application.
+          PetParent, powered by ATY Digital ("we," "our," or "the app"), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use the PetParent mobile application.
         </Text>
 
         <Text style={styles.sectionTitle}>1. Information We Collect</Text>
@@ -101,11 +101,16 @@ export default function PrivacyPolicyScreen() {
           We may update this Privacy Policy from time to time. When we do, we will update the "Last updated" date at the top of this page. We encourage you to review this policy periodically.
         </Text>
 
-        <Text style={styles.sectionTitle}>11. Contact Us</Text>
+        <Text style={styles.sectionTitle}>11. About Us</Text>
+        <Text style={styles.body}>
+          PetParent is powered by ATY Digital. ATY Digital is responsible for the development, operation, and maintenance of the PetParent application.
+        </Text>
+
+        <Text style={styles.sectionTitle}>12. Contact Us</Text>
         <Text style={styles.body}>
           If you have questions or concerns about this Privacy Policy or your data, please contact us at:
         </Text>
-        <Text style={styles.contact}>support@petparent.app</Text>
+        <Text style={styles.contact}>hello@atydigital.com</Text>
       </ScrollView>
     </View>
   );
