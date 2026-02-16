@@ -88,7 +88,10 @@ export default function RecordsScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: 12 }]}>
-        <Text style={styles.headerTitle}>Medical Records</Text>
+        <View style={{ flex: 1, marginRight: 12 }}>
+          <Text style={styles.headerTitle}>Track Your Pet's Health</Text>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, lineHeight: 17, marginTop: 4 }}>Log Flea Treatments, Vet Visits, and Medications. Set Reminders As-Needed</Text>
+        </View>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
