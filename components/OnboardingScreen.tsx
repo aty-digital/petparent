@@ -293,13 +293,12 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-          <Text style={introStyles.packTitle}>
-            Keep track of your{'\n'}
-            <Text style={{ color: C.accent }}>entire pack</Text>
-            {'  '}
-          </Text>
-          <Image source={petEmojis} style={{ width: 120, height: 40, marginTop: 4 }} resizeMode="contain" />
+        <View style={{ marginBottom: 6 }}>
+          <Text style={introStyles.packTitle}>Keep track of your</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={[introStyles.packTitle, { color: C.accent, marginBottom: 0 }]}>entire pack</Text>
+            <Image source={petEmojis} style={{ width: 100, height: 34 }} resizeMode="contain" />
+          </View>
         </View>
 
         <View style={introStyles.packFeaturesList}>
