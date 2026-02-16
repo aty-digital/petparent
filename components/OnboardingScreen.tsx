@@ -359,40 +359,48 @@ export default function OnboardingScreen() {
 
         <View style={introStyles.howCardsList}>
           <View style={introStyles.howCard}>
-            <View style={introStyles.howCardIconWrap}>
-              <Ionicons name="chatbubble-ellipses" size={22} color={C.accent} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <View style={introStyles.howCardIconWrap}>
+                <Ionicons name="chatbubble-ellipses" size={22} color={C.accent} />
+              </View>
+              <Text style={introStyles.howCardTitle}>AI Symptom Triage</Text>
             </View>
-            <Text style={introStyles.howCardTitle}>AI Symptom Triage</Text>
             <Text style={introStyles.howCardDesc}>
               Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.
             </Text>
           </View>
 
           <View style={introStyles.howCard}>
-            <View style={introStyles.howCardIconWrap}>
-              <MaterialCommunityIcons name="clipboard-text" size={22} color={C.accent} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <View style={introStyles.howCardIconWrap}>
+                <MaterialCommunityIcons name="clipboard-text" size={22} color={C.accent} />
+              </View>
+              <Text style={introStyles.howCardTitle}>Daily Logs and Health Records</Text>
             </View>
-            <Text style={introStyles.howCardTitle}>Daily Logs and Health Records</Text>
             <Text style={introStyles.howCardDesc}>
               Keep daily logs of your pet's behavior, vet visits, and vaccines. Track and manage medications for your entire pack {'\u2013'} all in one shareable place.
             </Text>
           </View>
 
           <View style={introStyles.howCard}>
-            <View style={introStyles.howCardIconWrap}>
-              <Ionicons name="notifications" size={22} color="#1B2D3B" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <View style={introStyles.howCardIconWrap}>
+                <Ionicons name="notifications" size={22} color="#1B2D3B" />
+              </View>
+              <Text style={introStyles.howCardTitle}>Smart Reminders</Text>
             </View>
-            <Text style={introStyles.howCardTitle}>Smart Reminders</Text>
             <Text style={introStyles.howCardDesc}>
               Never forget flea treatments, annual checkups, or medications again.
             </Text>
           </View>
 
           <View style={introStyles.howCard}>
-            <View style={introStyles.howCardIconWrap}>
-              <MaterialCommunityIcons name="paw" size={22} color={C.accent} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <View style={introStyles.howCardIconWrap}>
+                <MaterialCommunityIcons name="paw" size={22} color={C.accent} />
+              </View>
+              <Text style={introStyles.howCardTitle}>Shareable Pet Profiles</Text>
             </View>
-            <Text style={introStyles.howCardTitle}>Shareable Pet Profiles</Text>
             <Text style={introStyles.howCardDesc}>
               Your furry family is your top priority. Share your pet's health habits, and medication schedule, directly with your vet, pet sitter and family members.
             </Text>
@@ -1606,7 +1614,7 @@ const introStyles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     fontSize: 16,
     color: '#1B2D3B',
-    marginBottom: 6,
+    marginBottom: 0,
   },
   howCardDesc: {
     fontFamily: 'Inter_400Regular',
