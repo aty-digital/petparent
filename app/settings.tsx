@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable, Platform, TextInput,
-  Alert, KeyboardAvoidingView,
+  Alert, KeyboardAvoidingView, Linking,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -455,6 +455,25 @@ export default function SettingsScreen() {
                     <Ionicons name="document-text" size={18} color={C.accent} />
                   </View>
                   <Text style={styles.rowActionText}>Terms of Service</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                style={styles.row}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Linking.openURL('mailto:hello@atydigital.com?subject=PetParent%20Support%20Request');
+                }}
+                testID="settings-support"
+              >
+                <View style={styles.rowLeft}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="help-circle" size={18} color={C.accent} />
+                  </View>
+                  <Text style={styles.rowActionText}>Support & Feedback</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
               </Pressable>

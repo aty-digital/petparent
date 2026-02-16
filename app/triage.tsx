@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ActivityIndicator, ScrollView, KeyboardAvoidingView,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ActivityIndicator, ScrollView, KeyboardAvoidingView, Modal,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
 import { useSubscription } from '@/lib/subscription-context';
 import { apiRequest } from '@/lib/query-client';
 import type { TriageResult } from '@/lib/types';
+
+const TRIAGE_DISCLAIMER_KEY = '@pawguard_triage_disclaimer_accepted';
 
 const C = Colors.dark;
 
@@ -34,7 +37,21 @@ export default function TriageScreen() {
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false);
   const triageAllowed = canUseTriageThisMonth();
+
+  useEffect(() => {
+    AsyncStorage.getItem(TRIAGE_DISCLAIMER_KEY).then(val => {
+      if (val !== 'true') setShowDisclaimer(true);
+    });
+  }, []);
+
+  const acceptDisclaimer = async () => {
+    await AsyncStorage.setItem(TRIAGE_DISCLAIMER_KEY, 'true');
+    setShowDisclaimer(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
 
   const handleTriage = async () => {
     if (!symptoms.trim() || !activePet) return;
@@ -95,6 +112,53 @@ export default function TriageScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal
+        visible={showDisclaimer}
+        animationType="fade"
+        transparent
+        statusBarTranslucent
+      >
+        <View style={styles.disclaimerOverlay}>
+          <View style={styles.disclaimerCard}>
+            <View style={styles.disclaimerIconWrap}>
+              <MaterialCommunityIcons name="stethoscope" size={32} color={C.accent} />
+            </View>
+            <Text style={styles.disclaimerTitle}>Important Notice</Text>
+            <Text style={styles.disclaimerBody}>
+              The AI Symptom Triage feature provides general guidance only. It is{' '}
+              <Text style={{ fontFamily: 'Inter_700Bold' }}>not a substitute for professional veterinary care</Text>.
+            </Text>
+            <Text style={styles.disclaimerBody}>
+              Always consult a licensed veterinarian for any health concerns about your pet. In an emergency, contact your nearest emergency veterinary clinic immediately.
+            </Text>
+            <Text style={styles.disclaimerBody}>
+              AI-generated assessments may not always be accurate and should never be used to delay seeking professional veterinary advice.
+            </Text>
+
+            <Pressable
+              style={styles.disclaimerCheckRow}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setDisclaimerChecked(!disclaimerChecked);
+              }}
+            >
+              <View style={[styles.disclaimerCheckbox, disclaimerChecked && styles.disclaimerCheckboxActive]}>
+                {disclaimerChecked && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.disclaimerCheckText}>I understand this is not veterinary advice</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.disclaimerAcceptBtn, !disclaimerChecked && { opacity: 0.4 }]}
+              onPress={acceptDisclaimer}
+              disabled={!disclaimerChecked}
+            >
+              <Text style={styles.disclaimerAcceptText}>Continue</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -255,4 +319,81 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 16 },
   submitText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
   disclaimer: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16, lineHeight: 16 },
+  disclaimerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  disclaimerCard: {
+    backgroundColor: C.card,
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 380,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  disclaimerIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: C.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  disclaimerTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: C.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  disclaimerBody: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textSecondary,
+    lineHeight: 21,
+    marginBottom: 12,
+  },
+  disclaimerCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  disclaimerCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: C.textMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disclaimerCheckboxActive: {
+    backgroundColor: C.accent,
+    borderColor: C.accent,
+  },
+  disclaimerCheckText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: C.text,
+    flex: 1,
+  },
+  disclaimerAcceptBtn: {
+    backgroundColor: C.accent,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  disclaimerAcceptText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
 });
