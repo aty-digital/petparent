@@ -294,7 +294,7 @@ export default function OnboardingScreen() {
         </View>
 
         <View style={{ marginBottom: 10, marginHorizontal: -24, alignItems: 'center' }}>
-          <Image source={require('../assets/images/pack-title.png')} style={{ width: 320, height: 90 }} resizeMode="contain" />
+          <Image source={require('../assets/images/pack-title.png')} style={{ width: 380, height: 110 }} resizeMode="contain" />
         </View>
 
         <View style={introStyles.packFeaturesList}>
