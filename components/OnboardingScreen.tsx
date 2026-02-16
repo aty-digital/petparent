@@ -18,7 +18,9 @@ import type { Pet } from '@/lib/types';
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'complete';
+type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'complete';
+
+const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 
 const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = [
   { key: 'dog', label: 'Dog', icon: 'paw' },
@@ -41,7 +43,7 @@ export default function OnboardingScreen() {
   const { signup, login, setUserRole, addPet, completeOnboarding } = usePets();
   const { tier, canAddMorePets } = useSubscription();
 
-  const [step, setStep] = useState<Step>('welcome');
+  const [step, setStep] = useState<Step>('intro_welcome');
 
   const [signName, setSignName] = useState('');
   const [signEmail, setSignEmail] = useState('');
@@ -74,7 +76,7 @@ export default function OnboardingScreen() {
   const checkScale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (step === 'welcome') {
+    if (step === 'intro_welcome' || step === 'welcome') {
       Animated.parallel([
         Animated.spring(logoScale, { toValue: 1, friction: 4, tension: 60, useNativeDriver: true }),
         Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
@@ -221,6 +223,198 @@ export default function OnboardingScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await completeOnboarding();
   };
+
+  const renderIntroWelcome = () => (
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#3BA776', '#2D8F65', '#2D6A4F']}
+        style={{ flex: 1 }}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+      >
+        <View style={[introStyles.welcomeContainer, { paddingTop: topInset + 40 }]}>
+          <View style={introStyles.welcomePawsRow}>
+            <PawImage size={80} />
+            <PawImage size={60} />
+          </View>
+
+          <Text style={introStyles.welcomeTitle}>
+            Welcome to{'\n'}
+            <Text style={introStyles.welcomeTitleBold}>Pet</Text>
+            <Text style={introStyles.welcomeTitleBoldAccent}>Parent!</Text>
+          </Text>
+          <Text style={introStyles.welcomeSubtext}>
+            You just made the best decision{'\n'}for your furry family. Let's get your{'\n'}pack set up.
+          </Text>
+
+          <View style={introStyles.testimonialCard}>
+            <Text style={introStyles.quoteMarkLeft}>{'\u201D'}</Text>
+            <Text style={introStyles.testimonialTitle}>Perfect</Text>
+            <View style={introStyles.starsRow}>
+              {[1,2,3,4,5].map(i => (
+                <Ionicons key={i} name="star" size={28} color="#F4C542" />
+              ))}
+            </View>
+            <Text style={introStyles.testimonialQuote}>
+              {'\u201C'}This app is perfect for tracking all of my pets' health in one place.{'\u201D'}
+            </Text>
+            <Image
+              source={testimonialAvatar}
+              style={introStyles.testimonialAvatar}
+            />
+            <Text style={introStyles.quoteMarkRight}>{'\u201C'}</Text>
+          </View>
+        </View>
+
+        <View style={[introStyles.bottomBtnWrap, { paddingBottom: bottomInset + 20 }]}>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('intro_pack'); }}
+            style={introStyles.introBtn}
+            testID="intro-welcome-next"
+          >
+            <Text style={introStyles.introBtnText}>Let's Go</Text>
+            <Ionicons name="arrow-forward" size={22} color={C.accent} />
+          </Pressable>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  const renderIntroPack = () => (
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 30 }]}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        <View style={introStyles.packTopBanner}>
+          <View style={introStyles.packPawsOverlay}>
+            <PawImage size={50} />
+            <PawImage size={40} />
+          </View>
+        </View>
+
+        <Text style={introStyles.packTitle}>
+          Keep track of your{'\n'}
+          <Text style={{ color: C.accent }}>entire pack</Text>
+          {'  '}
+        </Text>
+        <View style={introStyles.packAnimalIcons}>
+          <MaterialCommunityIcons name="dog" size={32} color="#C8A26A" />
+          <MaterialCommunityIcons name="cat" size={32} color="#8E8E8E" />
+          <MaterialCommunityIcons name="rabbit" size={32} color="#C8956A" />
+        </View>
+
+        <View style={introStyles.packFeaturesList}>
+          <View style={introStyles.packFeatureItem}>
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#D6EBF2' }]}>
+              <MaterialCommunityIcons name="hospital-building" size={26} color="#4A90A4" />
+            </View>
+            <View style={introStyles.packFeatureTextWrap}>
+              <Text style={introStyles.packFeatureTitle}>Never miss a vet visit</Text>
+              <Text style={introStyles.packFeatureDesc}>
+                Log appointments, vaccines, & medications for every pet {'\u2013'} all in one place.
+              </Text>
+            </View>
+          </View>
+
+          <View style={introStyles.packFeatureItem}>
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#F8D9D9' }]}>
+              <Ionicons name="warning" size={24} color="#D64545" />
+            </View>
+            <View style={introStyles.packFeatureTextWrap}>
+              <Text style={introStyles.packFeatureTitle}>Know when it's urgent</Text>
+              <Text style={introStyles.packFeatureDesc}>
+                Describe your pet's symptoms, and let AI tell you if it's urgent vs. wait-and-see in seconds.
+              </Text>
+            </View>
+          </View>
+
+          <View style={introStyles.packFeatureItem}>
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#F8D9D9' }]}>
+              <Ionicons name="heart" size={24} color="#D64545" />
+            </View>
+            <View style={introStyles.packFeatureTextWrap}>
+              <Text style={introStyles.packFeatureTitle}>Care tailored to your breed</Text>
+              <Text style={introStyles.packFeatureDesc}>
+                Get breed-specific tips, feeding guides, and care reminders personalized to your pets.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[introStyles.bottomBtnWrapCream, { paddingBottom: bottomInset + 20 }]}>
+        <Pressable
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('intro_how'); }}
+          style={introStyles.introBtnGreen}
+          testID="intro-pack-next"
+        >
+          <Text style={introStyles.introBtnGreenText}>Meet the Features</Text>
+          <Ionicons name="arrow-forward" size={22} color="#FFFFFF" />
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderIntroHow = () => (
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 30 }]}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        <Text style={introStyles.howTitle}>
+          Here's how{'\n'}
+          <Text style={{ color: C.accent }}>PetParent</Text> works
+        </Text>
+
+        <View style={introStyles.howCardsList}>
+          <View style={introStyles.howCard}>
+            <View style={introStyles.howCardIconWrap}>
+              <Ionicons name="chatbubble-ellipses" size={22} color={C.accent} />
+            </View>
+            <Text style={introStyles.howCardTitle}>AI Symptom Triage</Text>
+            <Text style={introStyles.howCardDesc}>
+              Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.
+            </Text>
+          </View>
+
+          <View style={introStyles.howCard}>
+            <View style={introStyles.howCardIconWrap}>
+              <MaterialCommunityIcons name="clipboard-text" size={22} color={C.accent} />
+            </View>
+            <Text style={introStyles.howCardTitle}>Daily Logs and Health Records</Text>
+            <Text style={introStyles.howCardDesc}>
+              Keep daily logs of your pet's behavior, vet visits, and vaccines. Track and manage medications for your entire pack {'\u2013'} all in one shareable place.
+            </Text>
+          </View>
+
+          <View style={introStyles.howCard}>
+            <View style={introStyles.howCardIconWrap}>
+              <Ionicons name="notifications" size={22} color="#1B2D3B" />
+            </View>
+            <Text style={introStyles.howCardTitle}>Smart Reminders</Text>
+            <Text style={introStyles.howCardDesc}>
+              Never forget flea treatments, annual checkups, or medications again.
+            </Text>
+          </View>
+
+          <View style={introStyles.howCard}>
+            <View style={introStyles.howCardIconWrap}>
+              <MaterialCommunityIcons name="paw" size={22} color={C.accent} />
+            </View>
+            <Text style={introStyles.howCardTitle}>Shareable Pet Profiles</Text>
+            <Text style={introStyles.howCardDesc}>
+              Your furry family is your top priority. Share your pet's health habits, and medication schedule, directly with your vet, pet sitter and family members.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[introStyles.bottomBtnWrapCream, { paddingBottom: bottomInset + 20 }]}>
+        <Pressable
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('welcome'); }}
+          style={introStyles.introBtnGreen}
+          testID="intro-how-next"
+        >
+          <Text style={introStyles.introBtnGreenText}>Create My Profile</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 
   const renderWelcome = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 20 }]}>
@@ -726,6 +920,9 @@ export default function OnboardingScreen() {
 
   const renderStep = () => {
     switch (step) {
+      case 'intro_welcome': return renderIntroWelcome();
+      case 'intro_pack': return renderIntroPack();
+      case 'intro_how': return renderIntroHow();
       case 'welcome': return renderWelcome();
       case 'signup': return renderSignup();
       case 'login': return renderLogin();
@@ -1193,5 +1390,232 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
     color: C.text,
+  },
+});
+
+const introStyles = StyleSheet.create({
+  welcomeContainer: {
+    flex: 1,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+  },
+  welcomePawsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 34,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 42,
+  },
+  welcomeTitleBold: {
+    fontFamily: 'Inter_700Bold',
+    color: '#FFFFFF',
+  },
+  welcomeTitleBoldAccent: {
+    fontFamily: 'Inter_700Bold',
+    color: '#1B2D3B',
+  },
+  welcomeSubtext: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  testimonialCard: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(27,45,59,0.6)',
+    padding: 20,
+    alignItems: 'center',
+    width: '85%' as any,
+    position: 'relative' as const,
+  },
+  quoteMarkLeft: {
+    position: 'absolute' as const,
+    top: -8,
+    left: 10,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 50,
+    color: '#1B2D3B',
+    lineHeight: 50,
+  },
+  quoteMarkRight: {
+    position: 'absolute' as const,
+    bottom: 20,
+    right: 10,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 50,
+    color: '#1B2D3B',
+    lineHeight: 50,
+  },
+  testimonialTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#1B2D3B',
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 10,
+  },
+  testimonialQuote: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#E8F0E4',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 12,
+  },
+  testimonialAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  bottomBtnWrap: {
+    paddingHorizontal: 28,
+  },
+  introBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FAF5EB',
+    borderRadius: 16,
+    paddingVertical: 18,
+  },
+  introBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: C.accent,
+  },
+  bottomBtnWrapCream: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    backgroundColor: '#FAF5EB',
+  },
+  introBtnGreen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: C.accent,
+    borderRadius: 16,
+    paddingVertical: 18,
+  },
+  introBtnGreenText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  packTopBanner: {
+    backgroundColor: C.accent,
+    borderRadius: 20,
+    height: 120,
+    marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  packPawsOverlay: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  packTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 30,
+    color: '#1B2D3B',
+    marginBottom: 6,
+    lineHeight: 38,
+  },
+  packAnimalIcons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 28,
+    marginTop: 4,
+  },
+  packFeaturesList: {
+    gap: 24,
+  },
+  packFeatureItem: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'flex-start',
+  },
+  packFeatureIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  packFeatureTextWrap: {
+    flex: 1,
+    paddingTop: 2,
+  },
+  packFeatureTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: '#1B2D3B',
+    marginBottom: 4,
+  },
+  packFeatureDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B7068',
+    lineHeight: 21,
+  },
+  howTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 32,
+    color: '#1B2D3B',
+    marginBottom: 24,
+    lineHeight: 42,
+  },
+  howCardsList: {
+    gap: 16,
+  },
+  howCard: {
+    backgroundColor: '#F5EDDE',
+    borderRadius: 16,
+    padding: 20,
+  },
+  howCardIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(45, 106, 79, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  howCardTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: '#1B2D3B',
+    marginBottom: 6,
+  },
+  howCardDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B7068',
+    lineHeight: 21,
   },
 });
