@@ -69,6 +69,9 @@ export default function OnboardingScreen() {
   const [petGender, setPetGender] = useState<'male' | 'female'>('male');
   const [petColor, setPetColor] = useState('');
   const [petPhotoUri, setPetPhotoUri] = useState<string | undefined>(undefined);
+  const [petAgeMode, setPetAgeMode] = useState<'date' | 'age'>('date');
+  const [petBirthDate, setPetBirthDate] = useState('');
+  const [petAgeYears, setPetAgeYears] = useState('');
 
   const [loading, setLoading] = useState(false);
 
@@ -176,6 +179,9 @@ export default function OnboardingScreen() {
     setPetGender('male');
     setPetColor('');
     setPetPhotoUri(undefined);
+    setPetAgeMode('date');
+    setPetBirthDate('');
+    setPetAgeYears('');
   };
 
   const pickPetPhoto = async () => {
@@ -200,7 +206,11 @@ export default function OnboardingScreen() {
       name: petName.trim(),
       breed: petBreed.trim(),
       species: petSpecies,
-      birthDate: new Date().toISOString().split('T')[0],
+      birthDate: petAgeMode === 'date' && petBirthDate.trim()
+        ? (() => { const parts = petBirthDate.trim().split('/'); return parts.length === 3 ? `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}` : new Date().toISOString().split('T')[0]; })()
+        : petAgeMode === 'age' && petAgeYears.trim()
+          ? (() => { const d = new Date(); d.setFullYear(d.getFullYear() - (parseInt(petAgeYears) || 0)); return d.toISOString().split('T')[0]; })()
+          : new Date().toISOString().split('T')[0],
       weight: parseFloat(petWeight) || 0,
       weightUnit: petWeightUnit,
       gender: petGender,
@@ -813,6 +823,59 @@ export default function OnboardingScreen() {
                 testID="pet-breed"
               />
             </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Age / Birthday</Text>
+            <View style={styles.toggleRow}>
+              <Pressable
+                style={[styles.toggleBtn, petAgeMode === 'date' && styles.toggleBtnActive]}
+                onPress={() => { Haptics.selectionAsync(); setPetAgeMode('date'); }}
+              >
+                <Text style={[styles.toggleText, petAgeMode === 'date' && styles.toggleTextActive]}>Birth Date</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.toggleBtn, petAgeMode === 'age' && styles.toggleBtnActive]}
+                onPress={() => { Haptics.selectionAsync(); setPetAgeMode('age'); }}
+              >
+                <Text style={[styles.toggleText, petAgeMode === 'age' && styles.toggleTextActive]}>Approx. Age</Text>
+              </Pressable>
+            </View>
+            <View style={[styles.inputWrapper, { marginTop: 8 }]}>
+              {petAgeMode === 'date' ? (
+                <TextInput
+                  style={[styles.textInput, { paddingLeft: 14 }]}
+                  value={petBirthDate}
+                  onChangeText={(text) => {
+                    const cleaned = text.replace(/[^0-9/]/g, '');
+                    if (cleaned.length <= 10) {
+                      if (cleaned.length === 2 && petBirthDate.length < 2) setPetBirthDate(cleaned + '/');
+                      else if (cleaned.length === 5 && petBirthDate.length < 5) setPetBirthDate(cleaned + '/');
+                      else setPetBirthDate(cleaned);
+                    }
+                  }}
+                  placeholder="MM/DD/YYYY"
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  testID="pet-birth-date"
+                />
+              ) : (
+                <TextInput
+                  style={[styles.textInput, { paddingLeft: 14 }]}
+                  value={petAgeYears}
+                  onChangeText={(text) => setPetAgeYears(text.replace(/[^0-9]/g, ''))}
+                  placeholder="e.g., 3"
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  testID="pet-age-years"
+                />
+              )}
+            </View>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+              {petAgeMode === 'date' ? 'Enter your pet\'s date of birth' : 'Enter your pet\'s approximate age in years'}
+            </Text>
           </View>
 
           <View style={styles.rowFields}>
