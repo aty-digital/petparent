@@ -119,14 +119,14 @@ export default function TriageScreen() {
     setSymptoms(prev => prev ? `${prev}, ${s.toLowerCase()}` : s);
   };
 
-  const monthlyPrice = monthlyPackage?.product?.priceString || '$4.99/month';
-  const annualPrice = annualPackage?.product?.priceString || '$29.99/year';
+  const monthlyPrice = monthlyPackage?.product?.priceString || '$5.99/month';
+  const annualPrice = annualPackage?.product?.priceString || '$49.99/year';
   const annualMonthly = annualPackage?.product?.price
     ? `$${(annualPackage.product.price / 12).toFixed(2)}/mo`
-    : '$2.50/mo';
+    : '$4.17/mo';
   const savingsPercent = (monthlyPackage?.product?.price && annualPackage?.product?.price)
     ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
-    : 50;
+    : 30;
 
   const handlePurchase = async () => {
     const pkg = selectedPlan === 'monthly' ? monthlyPackage : annualPackage;
