@@ -33,12 +33,16 @@ export default function TriageScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const { activePet, addTriageResult, addRecord } = usePets();
-  const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier, recordTriageUsage } = useSubscription();
+  const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier, recordTriageUsage, monthlyPackage, annualPackage, purchasePackage, restorePurchases } = useSubscription();
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const triageAllowed = canUseTriageThisMonth();
 
   useEffect(() => {
@@ -55,6 +59,11 @@ export default function TriageScreen() {
 
   const handleTriage = async () => {
     if (!symptoms.trim() || !activePet) return;
+    if (!triageAllowed && tier === 'free') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setShowPaywall(true);
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setLoading(true);
     setError('');
@@ -108,6 +117,48 @@ export default function TriageScreen() {
   const addQuickSymptom = (s: string) => {
     Haptics.selectionAsync();
     setSymptoms(prev => prev ? `${prev}, ${s.toLowerCase()}` : s);
+  };
+
+  const monthlyPrice = monthlyPackage?.product?.priceString || '$4.99/month';
+  const annualPrice = annualPackage?.product?.priceString || '$29.99/year';
+  const annualMonthly = annualPackage?.product?.price
+    ? `$${(annualPackage.product.price / 12).toFixed(2)}/mo`
+    : '$2.50/mo';
+  const savingsPercent = (monthlyPackage?.product?.price && annualPackage?.product?.price)
+    ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
+    : 50;
+
+  const handlePurchase = async () => {
+    const pkg = selectedPlan === 'monthly' ? monthlyPackage : annualPackage;
+    if (!pkg) {
+      setShowPaywall(false);
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const success = await purchasePackage(pkg);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowPaywall(false);
+      }
+    } catch (_e) {
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowPaywall(false);
+      }
+    } catch (_e) {
+    } finally {
+      setRestoring(false);
+    }
   };
 
   return (
@@ -260,7 +311,7 @@ export default function TriageScreen() {
 
           <Pressable
             onPress={handleTriage}
-            disabled={!symptoms.trim() || loading || !triageAllowed}
+            disabled={!symptoms.trim() || loading}
             style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <LinearGradient
@@ -283,6 +334,97 @@ export default function TriageScreen() {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showPaywall}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => !purchasing && setShowPaywall(false)}
+      >
+        <View style={pw.overlay}>
+          <View style={pw.sheet}>
+            <Pressable style={pw.closeBtn} onPress={() => !purchasing && setShowPaywall(false)}>
+              <Ionicons name="close" size={22} color={C.textMuted} />
+            </Pressable>
+
+            <View style={pw.iconBadge}>
+              <Ionicons name="star" size={28} color="#FFB800" />
+            </View>
+            <Text style={pw.title}>Upgrade to Premium</Text>
+            <Text style={pw.subtitle}>
+              You've used all {maxFreeTriagePerMonth} free triage sessions this month. Unlock unlimited AI symptom analysis and more.
+            </Text>
+
+            <View style={pw.perksRow}>
+              {['Unlimited triage', 'Unlimited pets', 'Priority support'].map(perk => (
+                <View key={perk} style={pw.perkItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={C.accent} />
+                  <Text style={pw.perkText}>{perk}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Pressable
+              style={[pw.planCard, selectedPlan === 'annual' && pw.planCardSelected]}
+              onPress={() => setSelectedPlan('annual')}
+            >
+              <View style={pw.planRadio}>
+                {selectedPlan === 'annual' ? (
+                  <View style={pw.planRadioFilled} />
+                ) : (
+                  <View style={pw.planRadioEmpty} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={pw.planName}>Annual</Text>
+                  <View style={pw.saveBadge}>
+                    <Text style={pw.saveBadgeText}>Save {savingsPercent}%</Text>
+                  </View>
+                </View>
+                <Text style={pw.planPrice}>{annualPrice}</Text>
+                <Text style={pw.planSub}>{annualMonthly} billed annually</Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[pw.planCard, selectedPlan === 'monthly' && pw.planCardSelected]}
+              onPress={() => setSelectedPlan('monthly')}
+            >
+              <View style={pw.planRadio}>
+                {selectedPlan === 'monthly' ? (
+                  <View style={pw.planRadioFilled} />
+                ) : (
+                  <View style={pw.planRadioEmpty} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={pw.planName}>Monthly</Text>
+                <Text style={pw.planPrice}>{monthlyPrice}</Text>
+              </View>
+            </Pressable>
+
+            <Pressable style={pw.purchaseBtn} onPress={handlePurchase} disabled={purchasing}>
+              <LinearGradient colors={[C.accent, C.accentDim]} style={pw.purchaseBtnGrad}>
+                {purchasing ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={pw.purchaseBtnText}>Continue</Text>
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable style={pw.restoreBtn} onPress={handleRestore} disabled={restoring}>
+              <Text style={pw.restoreText}>{restoring ? 'Restoring...' : 'Restore Purchases'}</Text>
+            </Pressable>
+
+            <Text style={pw.legal}>
+              Payment will be charged to your Apple ID account at confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in your Account Settings.
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -395,5 +537,174 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     color: '#FFFFFF',
+  },
+});
+
+const pw = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: C.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 34,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,184,0,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: C.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  perksRow: {
+    gap: 8,
+    marginBottom: 20,
+  },
+  perkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  perkText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: C.text,
+  },
+  planCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: C.cardBorder,
+  },
+  planCardSelected: {
+    borderColor: C.accent,
+    backgroundColor: C.accentSoft,
+  },
+  planRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: C.textMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planRadioFilled: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 6,
+    borderColor: C.accent,
+    backgroundColor: '#fff',
+  },
+  planRadioEmpty: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: C.textMuted,
+  },
+  planName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: C.text,
+  },
+  planPrice: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+    color: C.text,
+    marginTop: 2,
+  },
+  planSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.textSecondary,
+    marginTop: 1,
+  },
+  saveBadge: {
+    backgroundColor: C.accent,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  saveBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: '#FFFFFF',
+  },
+  purchaseBtn: {
+    marginTop: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  purchaseBtnGrad: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+  },
+  purchaseBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: '#FFFFFF',
+  },
+  restoreBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  restoreText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.accent,
+  },
+  legal: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    color: C.textMuted,
+    textAlign: 'center',
+    lineHeight: 14,
+    paddingHorizontal: 8,
   },
 });
