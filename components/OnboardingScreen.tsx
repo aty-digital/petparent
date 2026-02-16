@@ -7,6 +7,7 @@ import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import BrandLogo, { PawImage } from '@/components/BrandLogo';
@@ -283,6 +284,18 @@ export default function OnboardingScreen() {
               Already have an account? <Text style={{ fontFamily: 'Inter_700Bold', textDecorationLine: 'underline' }}>Log In</Text>
             </Text>
           </Pressable>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#FFFFFF88', textAlign: 'center', marginTop: 18 }}>
+            Powered by ATY Digital
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 6, gap: 6 }}>
+            <Pressable onPress={() => router.push('/privacy-policy')} hitSlop={8}>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#FFFFFFAA', textDecorationLine: 'underline' }}>Privacy Policy</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: '#FFFFFF66' }}>|</Text>
+            <Pressable onPress={() => router.push('/terms-of-service')} hitSlop={8}>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#FFFFFFAA', textDecorationLine: 'underline' }}>Terms of Service</Text>
+            </Pressable>
+          </View>
         </View>
       </LinearGradient>
     </View>
