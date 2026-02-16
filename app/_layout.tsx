@@ -64,6 +64,7 @@ const onboardingImages = [
   require('@/assets/images/paw-blue.png'),
   require('@/assets/images/testimonial-avatar.png'),
   require('@/assets/images/pet-emojis.png'),
+  require('@/assets/images/bell-notification.png'),
 ];
 
 export default function RootLayout() {

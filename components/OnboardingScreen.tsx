@@ -13,18 +13,20 @@ import Colors from '@/constants/colors';
 import BrandLogo, { PawImage } from '@/components/BrandLogo';
 import { usePets, generateId, type UserRole } from '@/lib/pet-context';
 import { useSubscription } from '@/lib/subscription-context';
+import { requestNotificationPermission } from '@/lib/notifications';
 import PaywallScreen from '@/components/PaywallScreen';
 import type { Pet } from '@/lib/types';
 
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'complete';
+type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 const yellowPaw = require('@/assets/images/paw-yellow.png');
 const bluePaw = require('@/assets/images/paw-blue.png');
 const petEmojis = require('@/assets/images/pet-emojis.png');
+const bellIcon = require('@/assets/images/bell-notification.png');
 
 const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = [
   { key: 'dog', label: 'Dog', icon: 'paw' },
@@ -228,9 +230,20 @@ export default function OnboardingScreen() {
         Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
       ]).start();
     } else {
-      animateTransition('complete');
+      animateTransition('notifications');
     }
     setLoading(false);
+  };
+
+  const handleAllowNotifications = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await requestNotificationPermission();
+    animateTransition('complete');
+  };
+
+  const handleSkipNotifications = () => {
+    Haptics.selectionAsync();
+    animateTransition('complete');
   };
 
   const handleComplete = async () => {
@@ -1003,6 +1016,60 @@ export default function OnboardingScreen() {
     </View>
   );
 
+  const displayPetName = petName.trim() || 'your pet';
+
+  const renderNotifications = () => (
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 40 }]}>
+      <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 28 }}>
+        <Image
+          source={bellIcon}
+          style={{ width: 80, height: 80, marginBottom: 24 }}
+          resizeMode="contain"
+        />
+
+        <Text style={notifStyles.title}>
+          Stay on top of{'\n'}{displayPetName}'s health
+        </Text>
+        <Text style={notifStyles.subtitle}>
+          Turn on notifications so we can remind you about upcoming vet visits, medications, and annual checkups.
+        </Text>
+
+        <View style={notifStyles.previewCard}>
+          <View style={notifStyles.previewHeader}>
+            <View style={notifStyles.previewIconWrap}>
+              <MaterialCommunityIcons name="paw" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={notifStyles.previewAppName}>PetParent</Text>
+            <Text style={notifStyles.previewTime}>now</Text>
+          </View>
+          <Text style={notifStyles.previewTitle}>
+            {displayPetName}'s flea treatment is due
+          </Text>
+          <Text style={notifStyles.previewBody}>
+            Nexgard was last given 30 days ago. Time to give the next dose.
+          </Text>
+        </View>
+      </View>
+
+      <View style={{ paddingHorizontal: 28, paddingBottom: bottomInset + 20 }}>
+        <Pressable
+          onPress={handleAllowNotifications}
+          style={notifStyles.allowBtn}
+          testID="allow-notifications-btn"
+        >
+          <Text style={notifStyles.allowBtnText}>Allow Notifications</Text>
+        </Pressable>
+        <Pressable
+          onPress={handleSkipNotifications}
+          style={notifStyles.skipBtn}
+          testID="skip-notifications-btn"
+        >
+          <Text style={notifStyles.skipBtnText}>Not now — I'll set reminders manually</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const renderStep = () => {
     switch (step) {
       case 'intro_welcome': return renderIntroWelcome();
@@ -1026,6 +1093,7 @@ export default function OnboardingScreen() {
       );
       case 'petcount': return renderPetCount();
       case 'petcreate': return renderPetCreate();
+      case 'notifications': return renderNotifications();
       case 'complete': return renderComplete();
     }
   };
@@ -1702,5 +1770,94 @@ const introStyles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7068',
     lineHeight: 21,
+  },
+});
+
+const notifStyles = StyleSheet.create({
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 26,
+    color: '#1B2D3B',
+    textAlign: 'center' as const,
+    marginBottom: 12,
+    lineHeight: 34,
+  },
+  subtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#6B7068',
+    textAlign: 'center' as const,
+    lineHeight: 22,
+    marginBottom: 32,
+    paddingHorizontal: 8,
+  },
+  previewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    width: '100%' as any,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  previewHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginBottom: 8,
+    gap: 8,
+  },
+  previewIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#2D6A4F',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  previewAppName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#1B2D3B',
+    flex: 1,
+  },
+  previewTime: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: '#9CA39B',
+  },
+  previewTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    color: '#1B2D3B',
+    marginBottom: 4,
+  },
+  previewBody: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: '#6B7068',
+    lineHeight: 19,
+  },
+  allowBtn: {
+    backgroundColor: '#2D6A4F',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  allowBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  skipBtn: {
+    alignItems: 'center' as const,
+    paddingVertical: 14,
+  },
+  skipBtnText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#9CA39B',
   },
 });
