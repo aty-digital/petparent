@@ -293,7 +293,7 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
-        <View style={{ marginBottom: 10, marginHorizontal: -24, alignItems: 'center' }}>
+        <View style={{ marginBottom: 0, marginHorizontal: -24, alignItems: 'center' }}>
           <Image source={require('../assets/images/pack-title.png')} style={{ width: '95%', height: 140 }} resizeMode="contain" />
         </View>
 
