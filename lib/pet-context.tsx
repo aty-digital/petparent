@@ -1,6 +1,45 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult } from './types';
+
+function secureKey(email: string): string {
+  const sanitized = email.toLowerCase().trim().replace(/[^a-zA-Z0-9._-]/g, '_');
+  return `pawguard_pwd_${sanitized}`;
+}
+
+async function setSecurePassword(email: string, password: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    await AsyncStorage.setItem(userKey(email, 'password'), password);
+  } else {
+    await SecureStore.setItemAsync(secureKey(email), password);
+  }
+}
+
+async function getSecurePassword(email: string): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return AsyncStorage.getItem(userKey(email, 'password'));
+  }
+  const securePwd = await SecureStore.getItemAsync(secureKey(email));
+  if (securePwd) return securePwd;
+  const legacyPwd = await AsyncStorage.getItem(userKey(email, 'password'));
+  if (legacyPwd) {
+    await SecureStore.setItemAsync(secureKey(email), legacyPwd);
+    await AsyncStorage.removeItem(userKey(email, 'password'));
+    return legacyPwd;
+  }
+  return null;
+}
+
+async function deleteSecurePassword(email: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    await AsyncStorage.removeItem(userKey(email, 'password'));
+  } else {
+    try { await SecureStore.deleteItemAsync(secureKey(email)); } catch {}
+    try { await AsyncStorage.removeItem(userKey(email, 'password')); } catch {}
+  }
+}
 
 export type UserRole = 'pet_parent' | 'sitter' | 'vet';
 
@@ -295,7 +334,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
     await Promise.all([
       AsyncStorage.setItem(userKey(normalizedEmail, 'name'), name),
-      AsyncStorage.setItem(userKey(normalizedEmail, 'password'), password),
+      setSecurePassword(normalizedEmail, password),
       AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail),
     ]);
 
@@ -306,8 +345,11 @@ export function PetProvider({ children }: { children: ReactNode }) {
     const normalizedEmail = email.toLowerCase().trim();
     const accounts = await getAccountsRegistry();
     const account = accounts.find(a => a.email === normalizedEmail);
+    if (!account) return false;
 
-    if (!account || account.password !== password) {
+    const storedPassword = await getSecurePassword(normalizedEmail);
+    const passwordMatch = storedPassword ? storedPassword === password : account.password === password;
+    if (!passwordMatch) {
       return false;
     }
 
@@ -342,13 +384,19 @@ export function PetProvider({ children }: { children: ReactNode }) {
     const existingNew = accounts.find(a => a.email === normalizedNew);
     if (existingNew) return;
 
-    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete'];
+    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'subscription_tier', 'triage_usage', 'paywall_complete'];
     for (const suffix of suffixes) {
       const val = await AsyncStorage.getItem(userKey(oldEmail, suffix));
       if (val !== null) {
         await AsyncStorage.setItem(userKey(normalizedNew, suffix), val);
         await AsyncStorage.removeItem(userKey(oldEmail, suffix));
       }
+    }
+
+    const pwd = await getSecurePassword(oldEmail);
+    if (pwd) {
+      await setSecurePassword(normalizedNew, pwd);
+      await deleteSecurePassword(oldEmail);
     }
 
     const updatedAccounts = accounts.map(a =>
@@ -364,17 +412,22 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const updatePassword = useCallback(async (oldPassword: string, newPassword: string): Promise<boolean> => {
     if (!userEmail) return false;
+    const normalizedEmail = userEmail.toLowerCase().trim();
+    const storedPassword = await getSecurePassword(normalizedEmail);
     const accounts = await getAccountsRegistry();
-    const account = accounts.find(a => a.email === userEmail.toLowerCase().trim());
-    if (!account || account.password !== oldPassword) return false;
+    const account = accounts.find(a => a.email === normalizedEmail);
+    if (!account) return false;
+
+    const currentPwd = storedPassword || account.password;
+    if (currentPwd !== oldPassword) return false;
 
     const updatedAccounts = accounts.map(a =>
-      a.email === userEmail.toLowerCase().trim()
+      a.email === normalizedEmail
         ? { ...a, password: newPassword }
         : a
     );
     await saveAccountsRegistry(updatedAccounts);
-    await AsyncStorage.setItem(userKey(userEmail, 'password'), newPassword);
+    await setSecurePassword(normalizedEmail, newPassword);
     return true;
   }, [userEmail]);
 
@@ -385,6 +438,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete'];
     const keysToRemove = suffixes.map(s => userKey(normalizedEmail, s));
     await AsyncStorage.multiRemove(keysToRemove);
+    await deleteSecurePassword(normalizedEmail);
 
     const accounts = await getAccountsRegistry();
     const updatedAccounts = accounts.filter(a => a.email !== normalizedEmail);
