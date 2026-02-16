@@ -1,8 +1,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
+import { Asset } from "expo-asset";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar } from "expo-status-bar";
@@ -57,6 +58,14 @@ function RootLayoutNav() {
   return <MainStack />;
 }
 
+const onboardingImages = [
+  require('@/assets/images/pack-title.png'),
+  require('@/assets/images/paw-yellow.png'),
+  require('@/assets/images/paw-blue.png'),
+  require('@/assets/images/testimonial-avatar.png'),
+  require('@/assets/images/pet-emojis.png'),
+];
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -64,14 +73,19 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    Asset.loadAsync(onboardingImages).then(() => setImagesLoaded(true)).catch(() => setImagesLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && imagesLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, imagesLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !imagesLoaded) return null;
 
   return (
     <ErrorBoundary>
