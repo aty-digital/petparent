@@ -22,6 +22,8 @@ type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' 
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 const yellowPaw = require('@/assets/images/paw-yellow.png');
+const bluePaw = require('@/assets/images/paw-blue.png');
+const petEmojis = require('@/assets/images/pet-emojis.png');
 
 const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = [
   { key: 'dog', label: 'Dog', icon: 'paw' },
@@ -286,20 +288,18 @@ export default function OnboardingScreen() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={introStyles.packTopBanner}>
           <View style={introStyles.packPawsOverlay}>
-            <PawImage size={50} />
-            <PawImage size={40} />
+            <Image source={bluePaw} style={{ width: 50, height: 50, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
+            <Image source={yellowPaw} style={{ width: 40, height: 40, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
           </View>
         </View>
 
-        <Text style={introStyles.packTitle}>
-          Keep track of your{'\n'}
-          <Text style={{ color: C.accent }}>entire pack</Text>
-          {'  '}
-        </Text>
-        <View style={introStyles.packAnimalIcons}>
-          <MaterialCommunityIcons name="dog" size={32} color="#C8A26A" />
-          <MaterialCommunityIcons name="cat" size={32} color="#8E8E8E" />
-          <MaterialCommunityIcons name="rabbit" size={32} color="#C8956A" />
+        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+          <Text style={introStyles.packTitle}>
+            Keep track of your{'\n'}
+            <Text style={{ color: C.accent }}>entire pack</Text>
+            {'  '}
+          </Text>
+          <Image source={petEmojis} style={{ width: 120, height: 40, marginTop: 4 }} resizeMode="contain" />
         </View>
 
         <View style={introStyles.packFeaturesList}>
@@ -328,7 +328,7 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={introStyles.packFeatureItem}>
-            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#F8D9D9' }]}>
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#FDE8C8' }]}>
               <Ionicons name="heart" size={24} color="#D64545" />
             </View>
             <View style={introStyles.packFeatureTextWrap}>
