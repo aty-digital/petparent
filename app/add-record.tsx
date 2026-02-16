@@ -16,6 +16,7 @@ const C = Colors.dark;
 
 type RecordType = MedicalRecord['type'];
 const TYPES: { key: RecordType; label: string; icon: string; color: string }[] = [
+  { key: 'flea_treatment', label: 'Flea Treatment', icon: 'bug', color: '#81C784' },
   { key: 'vet_visit', label: 'Vet Visit', icon: 'medkit', color: '#4FC3F7' },
   { key: 'vaccination', label: 'Vaccination', icon: 'shield-checkmark', color: C.accent },
   { key: 'medication', label: 'Medication', icon: 'medical', color: '#FFB74D' },

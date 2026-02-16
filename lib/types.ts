@@ -20,7 +20,7 @@ export type MedicationFrequency = 'once_daily' | 'twice_daily' | 'three_daily' |
 export interface MedicalRecord {
   id: string;
   petId: string;
-  type: 'vet_visit' | 'medication' | 'vaccination' | 'triage';
+  type: 'vet_visit' | 'medication' | 'vaccination' | 'triage' | 'flea_treatment';
   title: string;
   description: string;
   date: string;

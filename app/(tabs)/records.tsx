@@ -12,10 +12,11 @@ import type { MedicalRecord } from '@/lib/types';
 
 const C = Colors.dark;
 
-type FilterType = 'all' | 'vet_visit' | 'medication' | 'vaccination' | 'triage';
+type FilterType = 'all' | 'flea_treatment' | 'vet_visit' | 'medication' | 'vaccination' | 'triage';
 
 const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
+  { key: 'flea_treatment', label: 'Flea Treatment' },
   { key: 'vet_visit', label: 'Vet Visits' },
   { key: 'vaccination', label: 'Vaccines' },
   { key: 'medication', label: 'Meds' },
@@ -25,6 +26,7 @@ const FILTERS: { key: FilterType; label: string }[] = [
 function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () => void }) {
   const getIcon = () => {
     switch (record.type) {
+      case 'flea_treatment': return 'bug';
       case 'vet_visit': return 'medkit';
       case 'vaccination': return 'shield-checkmark';
       case 'medication': return 'medical';
@@ -34,6 +36,7 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
   };
   const getColor = () => {
     switch (record.type) {
+      case 'flea_treatment': return '#81C784';
       case 'vet_visit': return '#5DA8D3';
       case 'vaccination': return C.accent;
       case 'medication': return '#D4A574';
