@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: C.text },
   filters: { paddingBottom: 8 },
-  filterList: { paddingHorizontal: 20, gap: 8 },
+  filterList: { paddingHorizontal: 20, paddingRight: 30, gap: 8 },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder },
   filterChipActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
   filterText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: C.textSecondary },
