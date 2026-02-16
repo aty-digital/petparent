@@ -9,7 +9,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
-import { scheduleMedicationReminders, requestNotificationPermission, getFrequencyLabel } from '@/lib/notifications';
+import { scheduleReminders, requestNotificationPermission, getFrequencyLabel } from '@/lib/notifications';
+import type { ReminderType } from '@/lib/notifications';
 import type { MedicalRecord, MedicationFrequency } from '@/lib/types';
 
 const C = Colors.dark;
@@ -62,6 +63,7 @@ export default function AddRecordScreen() {
   const [saving, setSaving] = useState(false);
 
   const isMedication = type === 'medication';
+  const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
   const isValid = title.trim() && date;
 
   const handleFrequencyChange = (freq: MedicationFrequency) => {
@@ -98,13 +100,16 @@ export default function AddRecordScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     let notificationIds: string[] = [];
+    const hasActiveReminder = supportsReminders && currentlyTaking && remindersEnabled && frequency !== 'as_needed';
 
-    if (isMedication && currentlyTaking && remindersEnabled && frequency !== 'as_needed') {
-      notificationIds = await scheduleMedicationReminders(
+    if (hasActiveReminder) {
+      const reminderType: ReminderType = type === 'flea_treatment' ? 'flea_treatment' : type === 'vaccination' ? 'vaccination' : 'medication';
+      notificationIds = await scheduleReminders(
         activePet.name,
         title.trim(),
         frequency,
         reminderTimes,
+        reminderType,
       );
     }
 
@@ -118,10 +123,10 @@ export default function AddRecordScreen() {
       doctor: doctor.trim() || undefined,
       clinic: clinic.trim() || undefined,
       expiresDate: expiresDate || undefined,
-      currentlyTaking: isMedication ? currentlyTaking : undefined,
-      frequency: isMedication && currentlyTaking ? frequency : undefined,
-      reminderTimes: isMedication && currentlyTaking ? reminderTimes : undefined,
-      remindersEnabled: isMedication && currentlyTaking ? remindersEnabled : undefined,
+      currentlyTaking: supportsReminders ? currentlyTaking : undefined,
+      frequency: supportsReminders && currentlyTaking ? frequency : undefined,
+      reminderTimes: supportsReminders && currentlyTaking ? reminderTimes : undefined,
+      remindersEnabled: supportsReminders && currentlyTaking ? remindersEnabled : undefined,
       notificationIds: notificationIds.length > 0 ? notificationIds : undefined,
     };
 
@@ -180,7 +185,7 @@ export default function AddRecordScreen() {
             </>
           )}
 
-          {isMedication && (
+          {supportsReminders && (
             <>
               <View style={styles.divider} />
 
@@ -195,8 +200,12 @@ export default function AddRecordScreen() {
                   {currentlyTaking && <Ionicons name="checkmark" size={14} color={C.background} />}
                 </View>
                 <View style={styles.checkboxTextWrap}>
-                  <Text style={styles.checkboxLabel}>Currently Taking</Text>
-                  <Text style={styles.checkboxSub}>This medication is part of an ongoing treatment</Text>
+                  <Text style={styles.checkboxLabel}>
+                    {type === 'flea_treatment' ? 'Ongoing Treatment' : type === 'vaccination' ? 'Recurring Vaccination' : 'Currently Taking'}
+                  </Text>
+                  <Text style={styles.checkboxSub}>
+                    {type === 'flea_treatment' ? 'Set up a recurring flea treatment reminder' : type === 'vaccination' ? 'Set a reminder for the next dose' : 'This medication is part of an ongoing treatment'}
+                  </Text>
                 </View>
               </Pressable>
 

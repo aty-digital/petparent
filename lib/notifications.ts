@@ -26,20 +26,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return finalStatus === 'granted';
 }
 
-function getRepeatInterval(frequency: MedicationFrequency): { seconds: number } | null {
-  switch (frequency) {
-    case 'once_daily': return { seconds: 86400 };
-    case 'twice_daily': return { seconds: 43200 };
-    case 'three_daily': return { seconds: 28800 };
-    case 'weekly': return { seconds: 604800 };
-    case 'biweekly': return { seconds: 1209600 };
-    case 'monthly': return { seconds: 2592000 };
-    case 'as_needed': return null;
-    default: return null;
-  }
-}
-
-function getFrequencyLabel(frequency: MedicationFrequency): string {
+export function getFrequencyLabel(frequency: MedicationFrequency): string {
   switch (frequency) {
     case 'once_daily': return 'Once Daily';
     case 'twice_daily': return 'Twice Daily';
@@ -52,11 +39,78 @@ function getFrequencyLabel(frequency: MedicationFrequency): string {
   }
 }
 
-export async function scheduleMedicationReminders(
+function buildTrigger(
+  frequency: MedicationFrequency,
+  hours: number,
+  minutes: number,
+): Notifications.NotificationTriggerInput {
+  switch (frequency) {
+    case 'weekly':
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: new Date().getDay() + 1,
+        hour: hours,
+        minute: minutes,
+      };
+    case 'monthly':
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.MONTHLY,
+        day: new Date().getDate(),
+        hour: hours,
+        minute: minutes,
+      };
+    case 'biweekly':
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 14 * 24 * 60 * 60,
+        repeats: true,
+      };
+    case 'once_daily':
+    case 'twice_daily':
+    case 'three_daily':
+    default:
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      };
+  }
+}
+
+export type ReminderType = 'medication' | 'flea_treatment' | 'vaccination';
+
+function getReminderTitle(petName: string, reminderType: ReminderType): string {
+  switch (reminderType) {
+    case 'flea_treatment': return `${petName} - Flea Treatment`;
+    case 'vaccination': return `${petName} - Vaccination`;
+    case 'medication':
+    default: return `${petName} - Medication Reminder`;
+  }
+}
+
+function getReminderBody(
   petName: string,
-  medicationName: string,
+  itemName: string,
+  frequency: MedicationFrequency,
+  reminderType: ReminderType,
+): string {
+  switch (reminderType) {
+    case 'flea_treatment':
+      return `Time for ${petName}'s flea treatment: ${itemName} (${getFrequencyLabel(frequency)})`;
+    case 'vaccination':
+      return `${petName}'s vaccination is due: ${itemName}`;
+    case 'medication':
+    default:
+      return `Time to give ${petName} their ${itemName} (${getFrequencyLabel(frequency)})`;
+  }
+}
+
+export async function scheduleReminders(
+  petName: string,
+  itemName: string,
   frequency: MedicationFrequency,
   reminderTimes: string[],
+  reminderType: ReminderType = 'medication',
 ): Promise<string[]> {
   const hasPermission = await requestNotificationPermission();
   if (!hasPermission) return [];
@@ -65,20 +119,17 @@ export async function scheduleMedicationReminders(
 
   for (const timeStr of reminderTimes) {
     const [hours, minutes] = timeStr.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) continue;
 
-    const trigger: Notifications.NotificationTriggerInput = {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: hours,
-      minute: minutes,
-    };
+    const trigger = buildTrigger(frequency, hours, minutes);
 
     try {
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: `${petName} - Medication Reminder`,
-          body: `Time to give ${petName} their ${medicationName} (${getFrequencyLabel(frequency)})`,
+          title: getReminderTitle(petName, reminderType),
+          body: getReminderBody(petName, itemName, frequency, reminderType),
           sound: true,
-          data: { type: 'medication_reminder', petName, medicationName },
+          data: { type: `${reminderType}_reminder`, petName, itemName },
         },
         trigger,
       });
@@ -91,7 +142,16 @@ export async function scheduleMedicationReminders(
   return notificationIds;
 }
 
-export async function cancelMedicationReminders(notificationIds: string[]): Promise<void> {
+export async function scheduleMedicationReminders(
+  petName: string,
+  medicationName: string,
+  frequency: MedicationFrequency,
+  reminderTimes: string[],
+): Promise<string[]> {
+  return scheduleReminders(petName, medicationName, frequency, reminderTimes, 'medication');
+}
+
+export async function cancelReminders(notificationIds: string[]): Promise<void> {
   for (const id of notificationIds) {
     try {
       await Notifications.cancelScheduledNotificationAsync(id);
@@ -101,4 +161,4 @@ export async function cancelMedicationReminders(notificationIds: string[]): Prom
   }
 }
 
-export { getFrequencyLabel };
+export const cancelMedicationReminders = cancelReminders;

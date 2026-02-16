@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import { cancelReminders } from '@/lib/notifications';
 import type { MedicalRecord } from '@/lib/types';
 
 const C = Colors.dark;
@@ -68,7 +69,12 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
         <Ionicons name={getIcon() as any} size={18} color={col} />
       </View>
       <View style={styles.recordInfo}>
-        <Text style={styles.recordTitle}>{record.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={styles.recordTitle}>{record.title}</Text>
+          {record.remindersEnabled && record.notificationIds && record.notificationIds.length > 0 && (
+            <Ionicons name="notifications" size={12} color={C.accent} />
+          )}
+        </View>
         <Text style={styles.recordDesc} numberOfLines={1}>{record.description}</Text>
         {record.doctor && <Text style={styles.recordMeta}>{record.doctor}{record.clinic ? ` \u00B7 ${record.clinic}` : ''}</Text>}
       </View>
@@ -142,7 +148,12 @@ export default function RecordsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <RecordItem record={item} onDelete={() => deleteRecord(item.id)} />
+          <RecordItem record={item} onDelete={async () => {
+            if (item.notificationIds && item.notificationIds.length > 0) {
+              await cancelReminders(item.notificationIds);
+            }
+            deleteRecord(item.id);
+          }} />
         )}
       />
     </View>
