@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Modal, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ export default function AddPetScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const { addPet, pets } = usePets();
-  const { canAddMorePets, tier } = useSubscription();
+  const { canAddMorePets, tier, monthlyPackage, annualPackage, purchasePackage, restorePurchases } = useSubscription();
   const allowed = canAddMorePets(pets.length);
 
   const [name, setName] = useState('');
@@ -40,11 +40,26 @@ export default function AddPetScreen() {
   const [vetName, setVetName] = useState('');
   const [vetPhone, setVetPhone] = useState('');
   const [vetClinic, setVetClinic] = useState('');
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const isValid = name.trim() && breed.trim() && weight.trim();
 
+  useEffect(() => {
+    if (!allowed && tier === 'free') {
+      setShowPaywall(true);
+    }
+  }, []);
+
   const handleSave = async () => {
     if (!isValid) return;
+    if (!allowed && tier === 'free') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setShowPaywall(true);
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const pet: Pet = {
@@ -64,6 +79,48 @@ export default function AddPetScreen() {
 
     await addPet(pet);
     router.back();
+  };
+
+  const monthlyPrice = monthlyPackage?.product?.priceString || '$5.99/month';
+  const annualPrice = annualPackage?.product?.priceString || '$49.99/year';
+  const annualMonthly = annualPackage?.product?.price
+    ? `$${(annualPackage.product.price / 12).toFixed(2)}/mo`
+    : '$4.17/mo';
+  const savingsPercent = (monthlyPackage?.product?.price && annualPackage?.product?.price)
+    ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
+    : 30;
+
+  const handlePurchase = async () => {
+    const pkg = selectedPlan === 'monthly' ? monthlyPackage : annualPackage;
+    if (!pkg) {
+      setShowPaywall(false);
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const success = await purchasePackage(pkg);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowPaywall(false);
+      }
+    } catch (_e) {
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowPaywall(false);
+      }
+    } catch (_e) {
+    } finally {
+      setRestoring(false);
+    }
   };
 
   return (
@@ -88,48 +145,33 @@ export default function AddPetScreen() {
             </View>
           </View>
 
-          {!allowed && (
-            <View style={{
-              backgroundColor: C.dangerSoft,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-              alignItems: 'center' as const,
-              gap: 8,
-            }}>
-              <Ionicons name="lock-closed" size={24} color={C.danger} />
-              <Text style={{
-                fontFamily: 'Inter_600SemiBold',
-                fontSize: 15,
-                color: C.danger,
-                textAlign: 'center' as const,
-              }}>
-                Pet Limit Reached
-              </Text>
-              <Text style={{
-                fontFamily: 'Inter_400Regular',
-                fontSize: 13,
-                color: C.textSecondary,
-                textAlign: 'center' as const,
-                lineHeight: 18,
-              }}>
-                Free plan allows 1 pet profile. Upgrade to Premium in Settings for unlimited pets.
-              </Text>
-              <Pressable
-                onPress={() => { router.back(); router.push('/settings'); }}
-                style={{
-                  backgroundColor: C.accent,
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                  paddingHorizontal: 20,
-                  marginTop: 4,
-                }}
-              >
-                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' }}>
-                  View Plans
+          {!allowed && tier === 'free' && (
+            <Pressable
+              onPress={() => setShowPaywall(true)}
+              style={{
+                backgroundColor: C.accentSoft,
+                borderRadius: 12,
+                padding: 14,
+                marginBottom: 20,
+                flexDirection: 'row' as const,
+                alignItems: 'center',
+                gap: 10,
+                borderWidth: 1,
+                borderColor: C.accentBorder,
+              }}
+            >
+              <Ionicons name="star" size={20} color={C.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontFamily: 'Inter_500Medium',
+                  fontSize: 13,
+                  color: C.text,
+                }}>
+                  Free plan allows 1 pet. Tap to upgrade for unlimited pets.
                 </Text>
-              </Pressable>
-            </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={C.accent} />
+            </Pressable>
           )}
 
           <Text style={styles.label}>Name *</Text>
@@ -214,18 +256,109 @@ export default function AddPetScreen() {
           <Text style={styles.label}>Phone</Text>
           <TextInput style={styles.input} value={vetPhone} onChangeText={setVetPhone} placeholder="(555) 123-4567" placeholderTextColor={C.textMuted} keyboardType="phone-pad" />
 
-          <Pressable onPress={handleSave} disabled={!isValid || !allowed}>
+          <Pressable onPress={handleSave} disabled={!isValid}>
             <LinearGradient
-              colors={isValid && allowed ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+              colors={isValid ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
               style={styles.saveBtn}
             >
-              <Text style={[styles.saveBtnText, (!isValid || !allowed) && { color: C.textMuted }]}>
-                {allowed ? 'Save Pet' : 'Upgrade to Add'}
+              <Text style={[styles.saveBtnText, !isValid && { color: C.textMuted }]}>
+                {allowed ? 'Save Pet' : 'Upgrade & Save'}
               </Text>
             </LinearGradient>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showPaywall}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => !purchasing && setShowPaywall(false)}
+      >
+        <View style={pw.overlay}>
+          <View style={pw.sheet}>
+            <Pressable style={pw.closeBtn} onPress={() => !purchasing && setShowPaywall(false)}>
+              <Ionicons name="close" size={22} color={C.textMuted} />
+            </Pressable>
+
+            <View style={pw.iconBadge}>
+              <Ionicons name="star" size={28} color="#FFB800" />
+            </View>
+            <Text style={pw.title}>Upgrade to Premium</Text>
+            <Text style={pw.subtitle}>
+              Free plan allows 1 pet profile. Unlock unlimited pets and all premium features.
+            </Text>
+
+            <View style={pw.perksRow}>
+              {['Unlimited pets', 'Unlimited triage', 'Priority support'].map(perk => (
+                <View key={perk} style={pw.perkItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={C.accent} />
+                  <Text style={pw.perkText}>{perk}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Pressable
+              style={[pw.planCard, selectedPlan === 'annual' && pw.planCardSelected]}
+              onPress={() => setSelectedPlan('annual')}
+            >
+              <View style={pw.planRadio}>
+                {selectedPlan === 'annual' ? (
+                  <View style={pw.planRadioFilled} />
+                ) : (
+                  <View style={pw.planRadioEmpty} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={pw.planName}>Annual</Text>
+                  <View style={pw.saveBadge}>
+                    <Text style={pw.saveBadgeText}>Save {savingsPercent}%</Text>
+                  </View>
+                </View>
+                <Text style={pw.planPrice}>{annualPrice}</Text>
+                <Text style={pw.planSub}>{annualMonthly} billed annually</Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[pw.planCard, selectedPlan === 'monthly' && pw.planCardSelected]}
+              onPress={() => setSelectedPlan('monthly')}
+            >
+              <View style={pw.planRadio}>
+                {selectedPlan === 'monthly' ? (
+                  <View style={pw.planRadioFilled} />
+                ) : (
+                  <View style={pw.planRadioEmpty} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={pw.planName}>Monthly</Text>
+                <Text style={pw.planPrice}>{monthlyPrice}</Text>
+              </View>
+            </Pressable>
+
+            <Pressable style={pw.purchaseBtn} onPress={handlePurchase} disabled={purchasing}>
+              <LinearGradient colors={[C.accent, C.accentDim]} style={pw.purchaseBtnGrad}>
+                {purchasing ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={pw.purchaseBtnText}>Continue</Text>
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable style={pw.restoreBtn} onPress={handleRestore} disabled={restoring}>
+              <Text style={pw.restoreText}>{restoring ? 'Restoring...' : 'Restore Purchases'}</Text>
+            </Pressable>
+
+            <Text style={pw.legal}>
+              Payment will be charged to your Apple ID account at confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in your Account Settings.
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -255,4 +388,173 @@ const styles = StyleSheet.create({
   genderTextActive: { color: C.accent },
   saveBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
+});
+
+const pw = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: C.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 34,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,184,0,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: C.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  perksRow: {
+    gap: 8,
+    marginBottom: 20,
+  },
+  perkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  perkText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: C.text,
+  },
+  planCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: C.cardBorder,
+  },
+  planCardSelected: {
+    borderColor: C.accent,
+    backgroundColor: C.accentSoft,
+  },
+  planRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: C.textMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planRadioFilled: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 6,
+    borderColor: C.accent,
+    backgroundColor: '#fff',
+  },
+  planRadioEmpty: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: C.textMuted,
+  },
+  planName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: C.text,
+  },
+  planPrice: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+    color: C.text,
+    marginTop: 2,
+  },
+  planSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.textSecondary,
+    marginTop: 1,
+  },
+  saveBadge: {
+    backgroundColor: C.accent,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  saveBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: '#FFFFFF',
+  },
+  purchaseBtn: {
+    marginTop: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  purchaseBtnGrad: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+  },
+  purchaseBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: '#FFFFFF',
+  },
+  restoreBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  restoreText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.accent,
+  },
+  legal: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    color: C.textMuted,
+    textAlign: 'center',
+    lineHeight: 14,
+    paddingHorizontal: 8,
+  },
 });
