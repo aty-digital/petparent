@@ -278,6 +278,11 @@ export default function OnboardingScreen() {
             <Text style={introStyles.introBtnText}>Let's Go</Text>
             <Ionicons name="arrow-forward" size={22} color={C.accent} />
           </Pressable>
+          <Pressable onPress={() => animateTransition('login')} testID="intro-welcome-login">
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: '#FFFFFFCC', textAlign: 'center', marginTop: 14 }}>
+              Already have an account? <Text style={{ fontFamily: 'Inter_700Bold', textDecorationLine: 'underline' }}>Log In</Text>
+            </Text>
+          </Pressable>
         </View>
       </LinearGradient>
     </View>
@@ -410,7 +415,7 @@ export default function OnboardingScreen() {
 
       <View style={[introStyles.bottomBtnWrapCream, { paddingBottom: bottomInset + 20 }]}>
         <Pressable
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('welcome'); }}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('signup'); }}
           style={introStyles.introBtnGreen}
           testID="intro-how-next"
         >
@@ -462,7 +467,7 @@ export default function OnboardingScreen() {
   const renderSignup = () => (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={[styles.formContainer, { paddingTop: topInset + 20, paddingBottom: bottomInset + 20 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Pressable onPress={() => animateTransition('welcome')} style={styles.backButton}>
+        <Pressable onPress={() => animateTransition('intro_how')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
 
@@ -555,7 +560,7 @@ export default function OnboardingScreen() {
   const renderLogin = () => (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={[styles.formContainer, { paddingTop: topInset + 20, paddingBottom: bottomInset + 20 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Pressable onPress={() => animateTransition('welcome')} style={styles.backButton}>
+        <Pressable onPress={() => animateTransition('intro_how')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
 
