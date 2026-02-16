@@ -385,7 +385,7 @@ export default function OnboardingScreen() {
           <View style={introStyles.howCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <View style={introStyles.howCardIconWrap}>
-                <Ionicons name="notifications" size={22} color="#1B2D3B" />
+                <Ionicons name="notifications" size={22} color={C.accent} />
               </View>
               <Text style={introStyles.howCardTitle}>Smart Reminders</Text>
             </View>
