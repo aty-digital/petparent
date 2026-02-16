@@ -256,7 +256,7 @@ export default function OnboardingScreen() {
             <Text style={introStyles.testimonialTitle}>Perfect</Text>
             <View style={introStyles.starsRow}>
               {[1,2,3,4,5].map(i => (
-                <Ionicons key={i} name="star" size={28} color="#F4C542" />
+                <Ionicons key={i} name="star" size={22} color="#F4C542" />
               ))}
             </View>
             <Text style={introStyles.testimonialQuote}>
@@ -1453,57 +1453,57 @@ const introStyles = StyleSheet.create({
   },
   testimonialCard: {
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: 'rgba(27,45,59,0.6)',
-    padding: 20,
+    padding: 14,
     alignItems: 'center',
-    width: '85%' as any,
+    width: '80%' as any,
     position: 'relative' as const,
   },
   quoteMarkLeft: {
     position: 'absolute' as const,
-    top: -8,
-    left: 10,
+    top: -6,
+    left: 8,
     fontFamily: 'Inter_700Bold',
-    fontSize: 50,
+    fontSize: 38,
     color: '#1B2D3B',
-    lineHeight: 50,
+    lineHeight: 38,
   },
   quoteMarkRight: {
     position: 'absolute' as const,
-    bottom: 20,
-    right: 10,
+    bottom: 14,
+    right: 8,
     fontFamily: 'Inter_700Bold',
-    fontSize: 50,
+    fontSize: 38,
     color: '#1B2D3B',
-    lineHeight: 50,
+    lineHeight: 38,
   },
   testimonialTitle: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 18,
+    fontSize: 16,
     color: '#1B2D3B',
-    marginBottom: 6,
-    marginTop: 12,
+    marginBottom: 4,
+    marginTop: 8,
   },
   starsRow: {
     flexDirection: 'row',
-    gap: 4,
-    marginBottom: 10,
+    gap: 3,
+    marginBottom: 6,
   },
   testimonialQuote: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 13,
     color: '#E8F0E4',
     textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 12,
+    lineHeight: 19,
+    marginBottom: 8,
   },
   testimonialAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 3,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
   },
   bottomBtnWrap: {
