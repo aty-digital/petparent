@@ -96,7 +96,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            router.replace('/');
+            if (router.canGoBack()) router.back();
             await logout();
           },
         },
