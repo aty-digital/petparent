@@ -21,6 +21,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'complete';
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
+const yellowPaw = require('@/assets/images/paw-yellow.png');
 
 const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = [
   { key: 'dog', label: 'Dog', icon: 'paw' },
@@ -234,8 +235,8 @@ export default function OnboardingScreen() {
       >
         <View style={[introStyles.welcomeContainer, { paddingTop: topInset + 40 }]}>
           <View style={introStyles.welcomePawsRow}>
-            <PawImage size={80} />
-            <PawImage size={60} />
+            <Image source={yellowPaw} style={{ width: 80, height: 80, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
+            <Image source={yellowPaw} style={{ width: 60, height: 60, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
           </View>
 
           <Text style={introStyles.welcomeTitle}>
