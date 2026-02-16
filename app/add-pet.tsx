@@ -274,11 +274,11 @@ export default function AddPetScreen() {
         animationType="slide"
         transparent
         statusBarTranslucent
-        onRequestClose={() => !purchasing && setShowPaywall(false)}
+        onRequestClose={() => { if (!purchasing) { setShowPaywall(false); router.replace('/'); } }}
       >
         <View style={pw.overlay}>
           <View style={pw.sheet}>
-            <Pressable style={pw.closeBtn} onPress={() => !purchasing && setShowPaywall(false)}>
+            <Pressable style={pw.closeBtn} onPress={() => { if (!purchasing) { setShowPaywall(false); router.replace('/'); } }}>
               <Ionicons name="close" size={22} color={C.textMuted} />
             </Pressable>
 
