@@ -1541,10 +1541,10 @@ const introStyles = StyleSheet.create({
   },
   packTitle: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 30,
+    fontSize: 24,
     color: '#1B2D3B',
     marginBottom: 6,
-    lineHeight: 38,
+    lineHeight: 32,
   },
   packAnimalIcons: {
     flexDirection: 'row',
