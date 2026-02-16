@@ -717,18 +717,18 @@ export default function OnboardingScreen() {
       </View>
 
       {tier === 'free' && (
-        <View style={{ backgroundColor: C.warningSoft, borderRadius: 10, padding: 12, marginTop: 8, marginHorizontal: 4 }}>
+        <Pressable onPress={() => animateTransition('paywall')} style={{ backgroundColor: C.warningSoft, borderRadius: 10, padding: 12, marginTop: 8, marginHorizontal: 4 }}>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: C.warning, textAlign: 'center', lineHeight: 18 }}>
-            Free plan allows 1 pet profile. Upgrade to Premium for unlimited pets.
+            Free plan allows 1 pet profile. <Text style={{ fontFamily: 'Inter_700Bold', textDecorationLine: 'underline' }}>Upgrade to Premium</Text> for unlimited pets.
           </Text>
-        </View>
+        </Pressable>
       )}
 
       <View style={styles.petDotsRow}>
         {Array.from({ length: petCount }).map((_, i) => (
-          <View key={`dot-${i}`} style={styles.petDot}>
+          <Pressable key={`dot-${i}`} onPress={tier === 'free' ? () => animateTransition('paywall') : undefined} style={styles.petDot}>
             <Ionicons name="paw" size={16} color={C.accent} />
-          </View>
+          </Pressable>
         ))}
       </View>
 
