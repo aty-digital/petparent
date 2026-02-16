@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Switch, Alert,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Switch, Linking, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
-import { scheduleReminders, requestNotificationPermission, getFrequencyLabel } from '@/lib/notifications';
+import { scheduleReminders, requestNotificationPermission, checkNotificationPermissionStatus, getFrequencyLabel } from '@/lib/notifications';
 import type { ReminderType } from '@/lib/notifications';
 import type { MedicalRecord, MedicationFrequency } from '@/lib/types';
 
@@ -61,6 +61,8 @@ export default function AddRecordScreen() {
   const [reminderTimes, setReminderTimes] = useState<string[]>(['09:00']);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [notifModalType, setNotifModalType] = useState<'ask' | 'settings'>('ask');
 
   const isMedication = type === 'medication';
   const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
@@ -81,17 +83,42 @@ export default function AddRecordScreen() {
 
   const handleToggleReminders = async (val: boolean) => {
     if (val && Platform.OS !== 'web') {
-      const granted = await requestNotificationPermission();
-      if (!granted) {
-        Alert.alert(
-          'Notifications Disabled',
-          'Please enable notifications in your device settings to receive medication reminders.',
-          [{ text: 'OK' }]
-        );
+      const permStatus = await checkNotificationPermissionStatus();
+      if (permStatus === 'granted') {
+        setRemindersEnabled(true);
         return;
       }
+      if (permStatus === 'can_ask') {
+        setNotifModalType('ask');
+        setShowNotifModal(true);
+        return;
+      }
+      setNotifModalType('settings');
+      setShowNotifModal(true);
+      return;
+    }
+    if (val && Platform.OS === 'web') {
+      return;
     }
     setRemindersEnabled(val);
+  };
+
+  const handleNotifModalAllow = async () => {
+    setShowNotifModal(false);
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      setRemindersEnabled(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleNotifModalSettings = () => {
+    setShowNotifModal(false);
+    try {
+      if (Platform.OS !== 'web') {
+        Linking.openSettings();
+      }
+    } catch (_e) {}
   };
 
   const handleSave = async () => {
@@ -288,6 +315,45 @@ export default function AddRecordScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showNotifModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNotifModal(false)}
+      >
+        <Pressable style={modalStyles.overlay} onPress={() => setShowNotifModal(false)}>
+          <Pressable style={modalStyles.card} onPress={() => {}}>
+            <View style={modalStyles.iconWrap}>
+              <Ionicons name="notifications" size={32} color={C.accent} />
+            </View>
+            <Text style={modalStyles.title}>
+              {notifModalType === 'ask' ? 'Enable Notifications' : 'Notifications Are Off'}
+            </Text>
+            <Text style={modalStyles.body}>
+              {notifModalType === 'ask'
+                ? 'Allow notifications so you never miss a medication dose, flea treatment, or vaccination reminder.'
+                : 'You previously declined notifications. To receive reminders, please enable them in your device Settings.'}
+            </Text>
+            <Pressable
+              style={modalStyles.primaryBtn}
+              onPress={notifModalType === 'ask' ? handleNotifModalAllow : handleNotifModalSettings}
+            >
+              <Ionicons
+                name={notifModalType === 'ask' ? 'notifications' : 'settings-outline'}
+                size={18}
+                color="#FFFFFF"
+              />
+              <Text style={modalStyles.primaryBtnText}>
+                {notifModalType === 'ask' ? 'Allow Notifications' : 'Open Settings'}
+              </Text>
+            </Pressable>
+            <Pressable style={modalStyles.cancelBtn} onPress={() => setShowNotifModal(false)}>
+              <Text style={modalStyles.cancelBtnText}>Not now</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -326,4 +392,70 @@ const styles = StyleSheet.create({
   reminderToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   reminderToggleLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
   reminderToggleSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textSecondary, marginTop: 1 },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 28,
+  },
+  card: {
+    backgroundColor: C.background,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 360,
+  },
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: C.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: C.text,
+    textAlign: 'center' as const,
+    marginBottom: 10,
+  },
+  body: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center' as const,
+    lineHeight: 21,
+    marginBottom: 24,
+  },
+  primaryBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    backgroundColor: C.accent,
+    borderRadius: 14,
+    paddingVertical: 16,
+    width: '100%',
+  },
+  primaryBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  cancelBtn: {
+    paddingVertical: 14,
+    alignItems: 'center' as const,
+  },
+  cancelBtnText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textMuted,
+  },
 });

@@ -26,6 +26,17 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return finalStatus === 'granted';
 }
 
+export type PermissionCheckResult = 'granted' | 'can_ask' | 'denied';
+
+export async function checkNotificationPermissionStatus(): Promise<PermissionCheckResult> {
+  if (Platform.OS === 'web') return 'denied';
+
+  const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+  if (status === 'granted') return 'granted';
+  if (canAskAgain) return 'can_ask';
+  return 'denied';
+}
+
 export function getFrequencyLabel(frequency: MedicationFrequency): string {
   switch (frequency) {
     case 'once_daily': return 'Once Daily';
