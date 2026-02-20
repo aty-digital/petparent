@@ -52,6 +52,7 @@ interface PetContextValue {
   deletePet: (id: string) => Promise<void>;
   records: MedicalRecord[];
   addRecord: (record: MedicalRecord) => Promise<void>;
+  updateRecord: (record: MedicalRecord) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   dailyLogs: DailyLog[];
   addDailyLog: (log: DailyLog) => Promise<void>;
@@ -232,6 +233,14 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const addRecord = useCallback(async (record: MedicalRecord) => {
     const updated = [record, ...records];
+    setRecords(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'records'), JSON.stringify(updated));
+    }
+  }, [records, userEmail]);
+
+  const updateRecord = useCallback(async (record: MedicalRecord) => {
+    const updated = records.map(r => r.id === record.id ? record : r);
     setRecords(updated);
     if (userEmail) {
       await AsyncStorage.setItem(userKey(userEmail, 'records'), JSON.stringify(updated));
@@ -450,7 +459,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({
     pets, activePet, setActivePetId, addPet, updatePet, deletePet,
-    records, addRecord, deleteRecord,
+    records, addRecord, updateRecord, deleteRecord,
     dailyLogs, addDailyLog, updateDailyLog, getTodayLog,
     tasks, addTask, toggleTask, deleteTask,
     triageResults, addTriageResult,
@@ -459,7 +468,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     signup, login, logout, completeOnboarding,
     updateEmail, updatePassword, deleteAccount,
   }), [pets, activePet, setActivePetId, addPet, updatePet, deletePet,
-    records, addRecord, deleteRecord,
+    records, addRecord, updateRecord, deleteRecord,
     dailyLogs, addDailyLog, updateDailyLog, getTodayLog,
     tasks, addTask, toggleTask, deleteTask,
     triageResults, addTriageResult, isLoading, userName, setUserName,

@@ -24,6 +24,22 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'triage', label: 'Triage' },
 ];
 
+function formatRecordDate(dateStr: string): string {
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts.map(Number);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${months[m - 1]} ${d}, ${y}`;
+    }
+  }
+  const fallback = new Date(dateStr);
+  if (!isNaN(fallback.getTime())) {
+    return fallback.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  return dateStr;
+}
+
 function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () => void }) {
   const getIcon = () => {
     switch (record.type) {
@@ -46,13 +62,15 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
     }
   };
   const col = getColor();
-  const formattedDate = new Date(record.date).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
+  const formattedDate = formatRecordDate(record.date);
 
   return (
     <Pressable
       style={styles.recordItem}
+      onPress={() => {
+        Haptics.selectionAsync();
+        router.push({ pathname: '/edit-record', params: { recordId: record.id } });
+      }}
       onLongPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         if (Platform.OS === 'web') {
@@ -78,7 +96,10 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
         <Text style={styles.recordDesc} numberOfLines={1}>{record.description}</Text>
         {record.doctor && <Text style={styles.recordMeta}>{record.doctor}{record.clinic ? ` \u00B7 ${record.clinic}` : ''}</Text>}
       </View>
-      <Text style={styles.recordDate}>{formattedDate}</Text>
+      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <Text style={styles.recordDate}>{formattedDate}</Text>
+        <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
+      </View>
     </Pressable>
   );
 }
