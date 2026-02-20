@@ -99,9 +99,28 @@ export default function OnboardingScreen() {
     }
   }, [step]);
 
+  const confettiAnims = useRef(
+    Array.from({ length: 30 }, () => ({
+      x: new Animated.Value(Math.random() * SCREEN_WIDTH),
+      y: new Animated.Value(-20 - Math.random() * 100),
+      rotate: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+    }))
+  ).current;
+
   useEffect(() => {
     if (step === 'complete') {
       Animated.spring(checkScale, { toValue: 1, friction: 3, tension: 80, useNativeDriver: true }).start();
+      confettiAnims.forEach((anim, i) => {
+        const delay = i * 60;
+        const duration = 2000 + Math.random() * 1500;
+        Animated.parallel([
+          Animated.timing(anim.y, { toValue: 800, duration, delay, useNativeDriver: true }),
+          Animated.timing(anim.x, { toValue: (Math.random() - 0.5) * SCREEN_WIDTH + SCREEN_WIDTH / 2, duration, delay, useNativeDriver: true }),
+          Animated.timing(anim.rotate, { toValue: 3 + Math.random() * 4, duration, delay, useNativeDriver: true }),
+          Animated.timing(anim.opacity, { toValue: 0, duration: duration * 0.8, delay: delay + duration * 0.2, useNativeDriver: true }),
+        ]).start();
+      });
     }
   }, [step]);
 
@@ -977,42 +996,70 @@ export default function OnboardingScreen() {
     );
   };
 
+  const CONFETTI_COLORS = ['#F4C542', '#E74C3C', '#3BA776', '#3498DB', '#9B59B6', '#FF6B6B', '#2ECC71', '#F39C12'];
+
   const renderComplete = () => (
-    <View style={[styles.centeredContainer, { paddingTop: topInset + 60 }]}>
-      <Animated.View style={[styles.completeCheckContainer, { transform: [{ scale: checkScale }] }]}>
-        <PawImage size={240} />
-      </Animated.View>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={[styles.centeredContainer, { paddingTop: topInset + 20, paddingBottom: bottomInset + 20, flexGrow: 1 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Animated.View style={[styles.completeCheckContainer, { marginTop: 10, marginBottom: 20, transform: [{ scale: checkScale }] }]}>
+          <PawImage size={140} />
+        </Animated.View>
 
-      <Text style={styles.completeTitle}>You're All Set!</Text>
-      <Text style={styles.completeSubtitle}>
-        {petCount === 1
-          ? 'Your pet profile is ready. Start tracking their health today.'
-          : `${petCount} pet profiles created. Start tracking their health today.`}
-      </Text>
+        <Text style={[styles.completeTitle, { fontSize: 26 }]}>You're All Set!</Text>
+        <Text style={[styles.completeSubtitle, { marginBottom: 24 }]}>
+          {petCount === 1
+            ? 'Your pet profile is ready. Start tracking their health today.'
+            : `${petCount} pet profiles created. Start tracking their health today.`}
+        </Text>
 
-      <View style={styles.completeFeaturesWrap}>
-        {[
-          { icon: 'pulse', label: 'Log daily wellness' },
-          { icon: 'medical', label: 'Track medical records' },
-          { icon: 'chatbubble-ellipses', label: 'AI symptom check' },
-        ].map((f, i) => (
-          <View key={i} style={styles.completeFeatureRow}>
-            <View style={styles.completeFeatureIcon}>
-              <Ionicons name={f.icon as any} size={18} color={C.accent} />
+        <View style={styles.completeFeaturesWrap}>
+          {[
+            { icon: 'pulse', label: 'Log daily wellness' },
+            { icon: 'medical', label: 'Track medical records' },
+            { icon: 'chatbubble-ellipses', label: 'AI symptom check' },
+          ].map((f, i) => (
+            <View key={i} style={styles.completeFeatureRow}>
+              <View style={styles.completeFeatureIcon}>
+                <Ionicons name={f.icon as any} size={18} color={C.accent} />
+              </View>
+              <Text style={styles.completeFeatureText}>{f.label}</Text>
             </View>
-            <Text style={styles.completeFeatureText}>{f.label}</Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
 
-      <View style={[styles.bottomActions, { paddingBottom: bottomInset + 16 }]}>
-        <Pressable onPress={handleComplete} testID="complete-btn">
-          <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Start Using PetParent</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </LinearGradient>
-        </Pressable>
-      </View>
+        <View style={{ marginTop: 'auto', paddingTop: 20 }}>
+          <Pressable onPress={handleComplete} testID="complete-btn">
+            <LinearGradient colors={[C.accent, C.accentDim]} style={styles.primaryBtn}>
+              <Text style={styles.primaryBtnText}>Start Using PetParent</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </ScrollView>
+
+      {confettiAnims.map((anim, i) => (
+        <Animated.View
+          key={`confetti-${i}`}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            width: i % 3 === 0 ? 10 : 7,
+            height: i % 3 === 0 ? 10 : 7,
+            borderRadius: i % 2 === 0 ? 5 : 1,
+            backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+            opacity: anim.opacity,
+            transform: [
+              { translateX: anim.x },
+              { translateY: anim.y },
+              { rotate: anim.rotate.interpolate({ inputRange: [0, 7], outputRange: ['0deg', '2520deg'] }) },
+            ],
+          }}
+        />
+      ))}
     </View>
   );
 
