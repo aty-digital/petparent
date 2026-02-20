@@ -325,59 +325,59 @@ export default function OnboardingScreen() {
   );
 
   const renderIntroPack = () => (
-    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 30 }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <View style={introStyles.packTopBanner}>
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 12 }]}>
+      <View style={{ flex: 1, paddingHorizontal: 24 }}>
+        <View style={[introStyles.packTopBanner, { height: 80, marginBottom: 12 }]}>
           <View style={introStyles.packPawsOverlay}>
-            <Image source={bluePaw} style={{ width: 50, height: 50, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
-            <Image source={yellowPaw} style={{ width: 40, height: 40, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
+            <Image source={bluePaw} style={{ width: 36, height: 36, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
+            <Image source={yellowPaw} style={{ width: 28, height: 28, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
           </View>
         </View>
 
-        <View style={{ marginBottom: -10, marginHorizontal: -24, alignItems: 'center' }}>
-          <Image source={require('../assets/images/pack-title.png')} style={{ width: '95%', height: 140 }} resizeMode="contain" />
+        <View style={{ marginBottom: 4, marginHorizontal: -24, alignItems: 'center' }}>
+          <Image source={require('../assets/images/pack-title.png')} style={{ width: '90%', height: 100 }} resizeMode="contain" />
         </View>
 
-        <View style={introStyles.packFeaturesList}>
+        <View style={[introStyles.packFeaturesList, { gap: 16 }]}>
           <View style={introStyles.packFeatureItem}>
-            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#D6EBF2' }]}>
-              <MaterialCommunityIcons name="hospital-building" size={26} color="#4A90A4" />
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#D6EBF2', width: 42, height: 42 }]}>
+              <MaterialCommunityIcons name="hospital-building" size={22} color="#4A90A4" />
             </View>
             <View style={introStyles.packFeatureTextWrap}>
               <Text style={introStyles.packFeatureTitle}>Never miss a vet visit</Text>
-              <Text style={introStyles.packFeatureDesc}>
+              <Text style={[introStyles.packFeatureDesc, { fontSize: 13, lineHeight: 19 }]}>
                 Log appointments, vaccines, & medications for every pet {'\u2013'} all in one place.
               </Text>
             </View>
           </View>
 
           <View style={introStyles.packFeatureItem}>
-            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#F8D9D9' }]}>
-              <Ionicons name="warning" size={24} color="#D64545" />
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#F8D9D9', width: 42, height: 42 }]}>
+              <Ionicons name="warning" size={20} color="#D64545" />
             </View>
             <View style={introStyles.packFeatureTextWrap}>
               <Text style={introStyles.packFeatureTitle}>Know when it's urgent</Text>
-              <Text style={introStyles.packFeatureDesc}>
-                Describe your pet's symptoms, and let AI tell you if it's urgent vs. wait-and-see in seconds.
+              <Text style={[introStyles.packFeatureDesc, { fontSize: 13, lineHeight: 19 }]}>
+                Describe symptoms, and let AI tell you if it's urgent vs. wait-and-see in seconds.
               </Text>
             </View>
           </View>
 
           <View style={introStyles.packFeatureItem}>
-            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#FDE8C8' }]}>
-              <Ionicons name="heart" size={24} color="#D64545" />
+            <View style={[introStyles.packFeatureIcon, { backgroundColor: '#FDE8C8', width: 42, height: 42 }]}>
+              <Ionicons name="heart" size={20} color="#D64545" />
             </View>
             <View style={introStyles.packFeatureTextWrap}>
               <Text style={introStyles.packFeatureTitle}>Care tailored to your breed</Text>
-              <Text style={introStyles.packFeatureDesc}>
-                Get breed-specific tips, feeding guides, and care reminders personalized to your pets.
+              <Text style={[introStyles.packFeatureDesc, { fontSize: 13, lineHeight: 19 }]}>
+                Get breed-specific tips, feeding guides, and reminders personalized to your pets.
               </Text>
             </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
-      <View style={[introStyles.bottomBtnWrapCream, { paddingBottom: bottomInset + 20 }]}>
+      <View style={{ paddingHorizontal: 24, paddingBottom: bottomInset + 20, paddingTop: 12, backgroundColor: '#FAF5EB' }}>
         <Pressable
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); animateTransition('intro_how'); }}
           style={introStyles.introBtnGreen}
