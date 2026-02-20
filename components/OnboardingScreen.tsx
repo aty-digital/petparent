@@ -259,10 +259,10 @@ export default function OnboardingScreen() {
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
       >
-        <View style={[introStyles.welcomeContainer, { paddingTop: topInset + 40 }]}>
+        <View style={[introStyles.welcomeContainer, { paddingTop: topInset + 16 }]}>
           <View style={introStyles.welcomePawsRow}>
-            <Image source={yellowPaw} style={{ width: 80, height: 80, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
-            <Image source={yellowPaw} style={{ width: 60, height: 60, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
+            <Image source={yellowPaw} style={{ width: 56, height: 56, transform: [{ rotate: '-15deg' }] }} resizeMode="contain" />
+            <Image source={yellowPaw} style={{ width: 42, height: 42, transform: [{ rotate: '10deg' }] }} resizeMode="contain" />
           </View>
 
           <Text style={introStyles.welcomeTitle}>
@@ -1556,15 +1556,15 @@ const introStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 14,
   },
   welcomeTitle: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 34,
+    fontSize: 30,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 42,
+    marginBottom: 8,
+    lineHeight: 38,
   },
   welcomeTitleBold: {
     fontFamily: 'Inter_700Bold',
@@ -1576,11 +1576,11 @@ const introStyles = StyleSheet.create({
   },
   welcomeSubtext: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 28,
+    lineHeight: 22,
+    marginBottom: 18,
   },
   testimonialCard: {
     backgroundColor: 'rgba(255,255,255,0.12)',
