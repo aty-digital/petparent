@@ -391,59 +391,59 @@ export default function OnboardingScreen() {
   );
 
   const renderIntroHow = () => (
-    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 30 }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <Text style={introStyles.howTitle}>
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 16 }]}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <Text style={[introStyles.howTitle, { fontSize: 26, lineHeight: 34, marginBottom: 16 }]}>
           Here's how{'\n'}
           <Text style={{ color: C.accent }}>PetParent</Text> works
         </Text>
 
-        <View style={introStyles.howCardsList}>
-          <View style={introStyles.howCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <View style={introStyles.howCardIconWrap}>
-                <Ionicons name="chatbubble-ellipses" size={22} color={C.accent} />
+        <View style={[introStyles.howCardsList, { gap: 12 }]}>
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <Ionicons name="chatbubble-ellipses" size={18} color={C.accent} />
               </View>
-              <Text style={introStyles.howCardTitle}>AI Symptom Triage</Text>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Symptom Triage</Text>
             </View>
-            <Text style={introStyles.howCardDesc}>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
               Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.
             </Text>
           </View>
 
-          <View style={introStyles.howCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <View style={introStyles.howCardIconWrap}>
-                <MaterialCommunityIcons name="clipboard-text" size={22} color={C.accent} />
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <MaterialCommunityIcons name="clipboard-text" size={18} color={C.accent} />
               </View>
-              <Text style={introStyles.howCardTitle}>Daily Logs and Health Records</Text>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Daily Logs & Health Records</Text>
             </View>
-            <Text style={introStyles.howCardDesc}>
-              Keep daily logs of your pet's behavior, vet visits, and vaccines. Track and manage medications for your entire pack {'\u2013'} all in one shareable place.
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Keep daily logs of your pet's behavior, vet visits, and vaccines. Track medications for your entire pack {'\u2013'} all in one place.
             </Text>
           </View>
 
-          <View style={introStyles.howCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <View style={introStyles.howCardIconWrap}>
-                <Ionicons name="notifications" size={22} color={C.accent} />
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <Ionicons name="notifications" size={18} color={C.accent} />
               </View>
-              <Text style={introStyles.howCardTitle}>Smart Reminders</Text>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Smart Reminders</Text>
             </View>
-            <Text style={introStyles.howCardDesc}>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
               Never forget flea treatments, annual checkups, or medications again.
             </Text>
           </View>
 
-          <View style={introStyles.howCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <View style={introStyles.howCardIconWrap}>
-                <MaterialCommunityIcons name="paw" size={22} color={C.accent} />
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <MaterialCommunityIcons name="paw" size={18} color={C.accent} />
               </View>
-              <Text style={introStyles.howCardTitle}>Shareable Pet Profiles</Text>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Shareable Pet Profiles</Text>
             </View>
-            <Text style={introStyles.howCardDesc}>
-              Your furry family is your top priority. Share your pet's health habits, and medication schedule, directly with your vet, pet sitter and family members.
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Share your pet's health habits and medication schedule directly with your vet, pet sitter and family members.
             </Text>
           </View>
         </View>
