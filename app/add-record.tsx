@@ -70,6 +70,7 @@ export default function AddRecordScreen() {
 
   const [type, setType] = useState<RecordType>('vet_visit');
   const [title, setTitle] = useState('');
+  const [brand, setBrand] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [doctor, setDoctor] = useState('');
@@ -179,6 +180,7 @@ export default function AddRecordScreen() {
       petId: activePet.id,
       type,
       title: title.trim(),
+      brand: brand.trim() || undefined,
       description: description.trim(),
       date,
       doctor: doctor.trim() || undefined,
@@ -232,6 +234,9 @@ export default function AddRecordScreen() {
 
           <Text style={styles.label}>Title *</Text>
           <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g., Amoxicillin 250mg" placeholderTextColor={C.textMuted} />
+
+          <Text style={styles.label}>Brand</Text>
+          <TextInput style={styles.input} value={brand} onChangeText={setBrand} placeholder="e.g., NexGard, Frontline, Bravecto" placeholderTextColor={C.textMuted} />
 
           <Text style={styles.label}>Description</Text>
           <TextInput style={[styles.input, { minHeight: 80 }]} value={description} onChangeText={setDescription} placeholder="Details about the visit, medication, or vaccine..." placeholderTextColor={C.textMuted} multiline textAlignVertical="top" />

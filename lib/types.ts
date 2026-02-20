@@ -22,6 +22,7 @@ export interface MedicalRecord {
   petId: string;
   type: 'vet_visit' | 'medication' | 'vaccination' | 'triage' | 'flea_treatment';
   title: string;
+  brand?: string;
   description: string;
   date: string;
   doctor?: string;

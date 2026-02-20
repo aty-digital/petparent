@@ -93,6 +93,7 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
             <Ionicons name="notifications" size={12} color={C.accent} />
           )}
         </View>
+        {record.brand ? <Text style={styles.recordBrand}>{record.brand}</Text> : null}
         <Text style={styles.recordDesc} numberOfLines={1}>{record.description}</Text>
         {record.doctor && <Text style={styles.recordMeta}>{record.doctor}{record.clinic ? ` \u00B7 ${record.clinic}` : ''}</Text>}
       </View>
@@ -196,6 +197,7 @@ const styles = StyleSheet.create({
   recordIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   recordInfo: { flex: 1, marginLeft: 12 },
   recordTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
+  recordBrand: { fontFamily: 'Inter_500Medium', fontSize: 11, color: C.accent, marginTop: 2 },
   recordDesc: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginTop: 2 },
   recordMeta: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginTop: 2 },
   recordDate: { fontFamily: 'Inter_500Medium', fontSize: 11, color: C.textMuted },
