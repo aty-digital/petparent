@@ -15,7 +15,7 @@ export interface Pet {
   vetClinic?: string;
 }
 
-export type MedicationFrequency = 'once_daily' | 'twice_daily' | 'three_daily' | 'weekly' | 'biweekly' | 'monthly' | 'as_needed';
+export type MedicationFrequency = 'once_daily' | 'twice_daily' | 'three_daily' | 'weekly' | 'biweekly' | 'monthly' | 'every_3_months' | 'as_needed';
 
 export interface MedicalRecord {
   id: string;

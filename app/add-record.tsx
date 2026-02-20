@@ -30,6 +30,7 @@ const FREQUENCIES: { key: MedicationFrequency; label: string }[] = [
   { key: 'weekly', label: 'Weekly' },
   { key: 'biweekly', label: 'Biweekly' },
   { key: 'monthly', label: 'Monthly' },
+  { key: 'every_3_months', label: 'Every 3 Months' },
   { key: 'as_needed', label: 'As Needed' },
 ];
 
@@ -40,8 +41,27 @@ const DEFAULT_TIMES: Record<MedicationFrequency, string[]> = {
   weekly: ['09:00'],
   biweekly: ['09:00'],
   monthly: ['09:00'],
+  every_3_months: ['09:00'],
   as_needed: [],
 };
+
+function to12Hour(time24: string): { hour: string; minute: string; period: 'AM' | 'PM' } {
+  const [h, m] = time24.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return { hour: '9', minute: '00', period: 'AM' };
+  const period: 'AM' | 'PM' = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return { hour: String(hour12), minute: String(m).padStart(2, '0'), period };
+}
+
+function to24Hour(hour: string, minute: string, period: 'AM' | 'PM'): string {
+  let h = parseInt(hour, 10);
+  if (isNaN(h)) h = 9;
+  if (h < 1) h = 1;
+  if (h > 12) h = 12;
+  let h24 = period === 'AM' ? (h === 12 ? 0 : h) : (h === 12 ? 12 : h + 12);
+  const m = parseInt(minute, 10);
+  return `${String(h24).padStart(2, '0')}:${String(isNaN(m) ? 0 : m).padStart(2, '0')}`;
+}
 
 export default function AddRecordScreen() {
   const insets = useSafeAreaInsets();
@@ -68,16 +88,30 @@ export default function AddRecordScreen() {
   const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
   const isValid = title.trim() && date;
 
+  const handleTypeChange = (newType: RecordType) => {
+    Haptics.selectionAsync();
+    const prevType = type;
+    setType(newType);
+    if (newType === 'flea_treatment' && (title === '' || title === 'Flea Treatment')) {
+      setTitle('Flea Treatment');
+    } else if (prevType === 'flea_treatment' && title === 'Flea Treatment') {
+      setTitle('');
+    }
+  };
+
   const handleFrequencyChange = (freq: MedicationFrequency) => {
     Haptics.selectionAsync();
     setFrequency(freq);
     setReminderTimes(DEFAULT_TIMES[freq]);
   };
 
-  const handleReminderTimeChange = (index: number, value: string) => {
-    const cleaned = value.replace(/[^0-9:]/g, '');
+  const handleTimePartChange = (index: number, part: 'hour' | 'minute' | 'period', value: string) => {
+    const current = to12Hour(reminderTimes[index]);
+    if (part === 'hour') current.hour = value.replace(/[^0-9]/g, '');
+    else if (part === 'minute') current.minute = value.replace(/[^0-9]/g, '');
+    else current.period = value as 'AM' | 'PM';
     const updated = [...reminderTimes];
-    updated[index] = cleaned;
+    updated[index] = to24Hour(current.hour, current.minute, current.period);
     setReminderTimes(updated);
   };
 
@@ -188,7 +222,7 @@ export default function AddRecordScreen() {
               <Pressable
                 key={t.key}
                 style={[styles.typeChip, type === t.key && styles.typeChipActive]}
-                onPress={() => { Haptics.selectionAsync(); setType(t.key); }}
+                onPress={() => handleTypeChange(t.key)}
               >
                 <Ionicons name={t.icon as any} size={16} color={type === t.key ? t.color : C.textMuted} />
                 <Text style={[styles.typeText, type === t.key && { color: t.color }]}>{t.label}</Text>
@@ -253,22 +287,51 @@ export default function AddRecordScreen() {
 
                   {frequency !== 'as_needed' && (
                     <>
-                      <Text style={styles.label}>Reminder Times</Text>
-                      {reminderTimes.map((time, i) => (
-                        <View key={i} style={styles.timeRow}>
-                          <Ionicons name="time-outline" size={18} color={C.accent} />
-                          <TextInput
-                            style={styles.timeInput}
-                            value={time}
-                            onChangeText={(v) => handleReminderTimeChange(i, v)}
-                            placeholder="HH:MM"
-                            placeholderTextColor={C.textMuted}
-                            keyboardType="numbers-and-punctuation"
-                            maxLength={5}
-                          />
-                          <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
-                        </View>
-                      ))}
+                      <Text style={styles.label}>What time should this be administered?</Text>
+                      {reminderTimes.map((time, i) => {
+                        const { hour, minute, period } = to12Hour(time);
+                        return (
+                          <View key={i} style={styles.timeRow}>
+                            <Ionicons name="time-outline" size={18} color={C.accent} />
+                            <TextInput
+                              style={styles.timeInputSmall}
+                              value={hour}
+                              onChangeText={(v) => handleTimePartChange(i, 'hour', v)}
+                              placeholder="12"
+                              placeholderTextColor={C.textMuted}
+                              keyboardType="number-pad"
+                              maxLength={2}
+                            />
+                            <Text style={styles.timeColon}>:</Text>
+                            <TextInput
+                              style={styles.timeInputSmall}
+                              value={minute}
+                              onChangeText={(v) => handleTimePartChange(i, 'minute', v)}
+                              placeholder="00"
+                              placeholderTextColor={C.textMuted}
+                              keyboardType="number-pad"
+                              maxLength={2}
+                            />
+                            <View style={styles.ampmRow}>
+                              <Pressable
+                                style={[styles.ampmBtn, period === 'AM' && styles.ampmBtnActive]}
+                                onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'AM'); }}
+                              >
+                                <Text style={[styles.ampmText, period === 'AM' && styles.ampmTextActive]}>AM</Text>
+                              </Pressable>
+                              <Pressable
+                                style={[styles.ampmBtn, period === 'PM' && styles.ampmBtnActive]}
+                                onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'PM'); }}
+                              >
+                                <Text style={[styles.ampmText, period === 'PM' && styles.ampmTextActive]}>PM</Text>
+                              </Pressable>
+                            </View>
+                            {reminderTimes.length > 1 && (
+                              <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
+                            )}
+                          </View>
+                        );
+                      })}
 
                       <View style={styles.reminderToggle}>
                         <View style={styles.reminderToggleLeft}>
@@ -385,9 +448,15 @@ const styles = StyleSheet.create({
   freqChipActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
   freqText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: C.textMuted },
   freqTextActive: { color: C.accent },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  timeInput: { flex: 1, backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontFamily: 'Inter_500Medium', fontSize: 14, color: C.text, borderWidth: 1, borderColor: C.cardBorder },
-  timeDoseLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, width: 50 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  timeInputSmall: { width: 44, backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontFamily: 'Inter_500Medium', fontSize: 14, color: C.text, borderWidth: 1, borderColor: C.cardBorder, textAlign: 'center' },
+  timeColon: { fontFamily: 'Inter_700Bold', fontSize: 16, color: C.textSecondary },
+  ampmRow: { flexDirection: 'row', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: C.cardBorder },
+  ampmBtn: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: C.card },
+  ampmBtnActive: { backgroundColor: C.accentSoft },
+  ampmText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: C.textMuted },
+  ampmTextActive: { color: C.accent },
+  timeDoseLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary, marginLeft: 4 },
   reminderToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.card, borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: C.cardBorder },
   reminderToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   reminderToggleLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },

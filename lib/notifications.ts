@@ -45,6 +45,7 @@ export function getFrequencyLabel(frequency: MedicationFrequency): string {
     case 'weekly': return 'Weekly';
     case 'biweekly': return 'Every 2 Weeks';
     case 'monthly': return 'Monthly';
+    case 'every_3_months': return 'Every 3 Months';
     case 'as_needed': return 'As Needed';
     default: return frequency;
   }
@@ -74,6 +75,12 @@ function buildTrigger(
       return {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 14 * 24 * 60 * 60,
+        repeats: true,
+      };
+    case 'every_3_months':
+      return {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 90 * 24 * 60 * 60,
         repeats: true,
       };
     case 'once_daily':
