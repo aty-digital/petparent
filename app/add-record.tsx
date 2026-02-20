@@ -79,7 +79,7 @@ export default function AddRecordScreen() {
 
   const [currentlyTaking, setCurrentlyTaking] = useState(false);
   const [frequency, setFrequency] = useState<MedicationFrequency>('once_daily');
-  const [reminderTimes, setReminderTimes] = useState<string[]>(['09:00']);
+  const [timeDisplays, setTimeDisplays] = useState<{ hour: string; minute: string; period: 'AM' | 'PM' }[]>([{ hour: '9', minute: '00', period: 'AM' }]);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
@@ -88,6 +88,10 @@ export default function AddRecordScreen() {
   const isMedication = type === 'medication';
   const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
   const isValid = title.trim() && date;
+
+  const buildReminderTimes = (): string[] => {
+    return timeDisplays.map(td => to24Hour(td.hour, td.minute, td.period));
+  };
 
   const handleTypeChange = (newType: RecordType) => {
     Haptics.selectionAsync();
@@ -103,17 +107,17 @@ export default function AddRecordScreen() {
   const handleFrequencyChange = (freq: MedicationFrequency) => {
     Haptics.selectionAsync();
     setFrequency(freq);
-    setReminderTimes(DEFAULT_TIMES[freq]);
+    setTimeDisplays(DEFAULT_TIMES[freq].map(t => to12Hour(t)));
   };
 
   const handleTimePartChange = (index: number, part: 'hour' | 'minute' | 'period', value: string) => {
-    const current = to12Hour(reminderTimes[index]);
+    const updated = [...timeDisplays];
+    const current = { ...updated[index] };
     if (part === 'hour') current.hour = value.replace(/[^0-9]/g, '');
     else if (part === 'minute') current.minute = value.replace(/[^0-9]/g, '');
     else current.period = value as 'AM' | 'PM';
-    const updated = [...reminderTimes];
-    updated[index] = to24Hour(current.hour, current.minute, current.period);
-    setReminderTimes(updated);
+    updated[index] = current;
+    setTimeDisplays(updated);
   };
 
   const handleToggleReminders = async (val: boolean) => {
@@ -161,6 +165,7 @@ export default function AddRecordScreen() {
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    const reminderTimes24 = buildReminderTimes();
     let notificationIds: string[] = [];
     const hasActiveReminder = supportsReminders && currentlyTaking && remindersEnabled && frequency !== 'as_needed';
 
@@ -170,7 +175,7 @@ export default function AddRecordScreen() {
         activePet.name,
         title.trim(),
         frequency,
-        reminderTimes,
+        reminderTimes24,
         reminderType,
       );
     }
@@ -188,7 +193,7 @@ export default function AddRecordScreen() {
       expiresDate: expiresDate || undefined,
       currentlyTaking: supportsReminders ? currentlyTaking : undefined,
       frequency: supportsReminders && currentlyTaking ? frequency : undefined,
-      reminderTimes: supportsReminders && currentlyTaking ? reminderTimes : undefined,
+      reminderTimes: supportsReminders && currentlyTaking ? reminderTimes24 : undefined,
       remindersEnabled: supportsReminders && currentlyTaking ? remindersEnabled : undefined,
       notificationIds: notificationIds.length > 0 ? notificationIds : undefined,
     };
@@ -293,14 +298,12 @@ export default function AddRecordScreen() {
                   {frequency !== 'as_needed' && (
                     <>
                       <Text style={styles.label}>What time should this be administered?</Text>
-                      {reminderTimes.map((time, i) => {
-                        const { hour, minute, period } = to12Hour(time);
-                        return (
+                      {timeDisplays.map((td, i) => (
                           <View key={i} style={styles.timeRow}>
                             <Ionicons name="time-outline" size={18} color={C.accent} />
                             <TextInput
                               style={styles.timeInputSmall}
-                              value={hour}
+                              value={td.hour}
                               onChangeText={(v) => handleTimePartChange(i, 'hour', v)}
                               placeholder="12"
                               placeholderTextColor={C.textMuted}
@@ -310,7 +313,7 @@ export default function AddRecordScreen() {
                             <Text style={styles.timeColon}>:</Text>
                             <TextInput
                               style={styles.timeInputSmall}
-                              value={minute}
+                              value={td.minute}
                               onChangeText={(v) => handleTimePartChange(i, 'minute', v)}
                               placeholder="00"
                               placeholderTextColor={C.textMuted}
@@ -319,24 +322,23 @@ export default function AddRecordScreen() {
                             />
                             <View style={styles.ampmRow}>
                               <Pressable
-                                style={[styles.ampmBtn, period === 'AM' && styles.ampmBtnActive]}
+                                style={[styles.ampmBtn, td.period === 'AM' && styles.ampmBtnActive]}
                                 onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'AM'); }}
                               >
-                                <Text style={[styles.ampmText, period === 'AM' && styles.ampmTextActive]}>AM</Text>
+                                <Text style={[styles.ampmText, td.period === 'AM' && styles.ampmTextActive]}>AM</Text>
                               </Pressable>
                               <Pressable
-                                style={[styles.ampmBtn, period === 'PM' && styles.ampmBtnActive]}
+                                style={[styles.ampmBtn, td.period === 'PM' && styles.ampmBtnActive]}
                                 onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'PM'); }}
                               >
-                                <Text style={[styles.ampmText, period === 'PM' && styles.ampmTextActive]}>PM</Text>
+                                <Text style={[styles.ampmText, td.period === 'PM' && styles.ampmTextActive]}>PM</Text>
                               </Pressable>
                             </View>
-                            {reminderTimes.length > 1 && (
+                            {timeDisplays.length > 1 && (
                               <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
                             )}
                           </View>
-                        );
-                      })}
+                      ))}
 
                       <View style={styles.reminderToggle}>
                         <View style={styles.reminderToggleLeft}>
