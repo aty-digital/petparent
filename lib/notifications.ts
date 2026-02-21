@@ -169,6 +169,70 @@ export async function scheduleMedicationReminders(
   return scheduleReminders(petName, medicationName, frequency, reminderTimes, 'medication');
 }
 
+export async function scheduleFollowUpReminders(
+  petName: string,
+  clinic: string,
+  doctor: string,
+  followUpDate: string,
+  followUpTime: string,
+): Promise<string[]> {
+  const hasPermission = await requestNotificationPermission();
+  if (!hasPermission) return [];
+
+  const notificationIds: string[] = [];
+
+  const [year, month, day] = followUpDate.split('-').map(Number);
+  const [hours, minutes] = followUpTime.split(':').map(Number);
+  if ([year, month, day, hours, minutes].some(isNaN)) return [];
+
+  const followUpMs = new Date(year, month - 1, day, hours, minutes).getTime();
+  const now = Date.now();
+
+  const oneWeekBeforeMs = followUpMs - 7 * 24 * 60 * 60 * 1000;
+  if (oneWeekBeforeMs > now) {
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `${petName} - Vet Visit in 1 Week`,
+          body: `Reminder: ${petName}'s follow-up visit${clinic ? ` at ${clinic}` : ''}${doctor ? ` with ${doctor}` : ''} is in one week.`,
+          sound: true,
+          data: { type: 'follow_up_1_week', petName },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: new Date(oneWeekBeforeMs),
+        },
+      });
+      notificationIds.push(id);
+    } catch (e) {
+      console.warn('Failed to schedule 1-week follow-up notification:', e);
+    }
+  }
+
+  const oneDayBeforeMs = followUpMs - 24 * 60 * 60 * 1000;
+  if (oneDayBeforeMs > now) {
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `${petName} - Vet Visit Tomorrow`,
+          body: `Reminder: ${petName}'s follow-up visit${clinic ? ` at ${clinic}` : ''}${doctor ? ` with ${doctor}` : ''} is tomorrow.`,
+          sound: true,
+          data: { type: 'follow_up_24_hours', petName },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: new Date(oneDayBeforeMs),
+        },
+      });
+      notificationIds.push(id);
+    } catch (e) {
+      console.warn('Failed to schedule 24-hour follow-up notification:', e);
+    }
+  }
+
+  return notificationIds;
+}
+
 export async function cancelReminders(notificationIds: string[]): Promise<void> {
   for (const id of notificationIds) {
     try {

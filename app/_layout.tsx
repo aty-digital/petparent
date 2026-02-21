@@ -11,6 +11,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { PetProvider, usePets } from "@/lib/pet-context";
 import { SubscriptionProvider } from "@/lib/subscription-context";
+import { NotificationProvider } from "@/lib/notification-context";
+import SwoopNotification from "@/components/SwoopNotification";
 import OnboardingScreen from "@/components/OnboardingScreen";
 import {
   useFonts,
@@ -36,6 +38,7 @@ function MainStack() {
       <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="privacy-policy" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="terms-of-service" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
     </Stack>
   );
 }
@@ -55,7 +58,12 @@ function RootLayoutNav() {
     return <OnboardingScreen />;
   }
 
-  return <MainStack />;
+  return (
+    <>
+      <MainStack />
+      <SwoopNotification />
+    </>
+  );
 }
 
 const onboardingImages = [
@@ -95,8 +103,10 @@ export default function RootLayout() {
           <KeyboardProvider>
             <PetProvider>
               <SubscriptionProvider>
-                <StatusBar style="dark" />
-                <RootLayoutNav />
+                <NotificationProvider>
+                  <StatusBar style="dark" />
+                  <RootLayoutNav />
+                </NotificationProvider>
               </SubscriptionProvider>
             </PetProvider>
           </KeyboardProvider>

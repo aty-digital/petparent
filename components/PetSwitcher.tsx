@@ -6,12 +6,14 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import { useNotifications } from '@/lib/notification-context';
 
 const C = Colors.dark;
 
 export default function PetSwitcher() {
   const insets = useSafeAreaInsets();
   const { pets, activePet, setActivePetId, userName } = usePets();
+  const { unreadCount } = useNotifications();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
 
   if (pets.length === 0) return null;
@@ -24,6 +26,21 @@ export default function PetSwitcher() {
           <Text style={styles.ownerName}>{userName || 'My Pets'}</Text>
         </View>
         <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/notifications');
+            }}
+            style={styles.bellButton}
+            testID="header-notifications"
+          >
+            <Ionicons name={unreadCount > 0 ? 'notifications' : 'notifications-outline'} size={22} color={unreadCount > 0 ? C.accent : C.textSecondary} />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
+          </Pressable>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -123,6 +140,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  bellButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative' as const,
+  },
+  badge: {
+    position: 'absolute' as const,
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#D64545',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 9,
+    color: '#FFFFFF',
   },
   addButton: {
     width: 44,

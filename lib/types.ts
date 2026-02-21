@@ -34,6 +34,23 @@ export interface MedicalRecord {
   reminderTimes?: string[];
   remindersEnabled?: boolean;
   notificationIds?: string[];
+  followUpScheduled?: boolean;
+  followUpDate?: string;
+  followUpTime?: string;
+  followUpRemindersEnabled?: boolean;
+  followUpNotificationIds?: string[];
+}
+
+export interface InAppNotification {
+  id: string;
+  petId: string;
+  recordId: string;
+  type: 'follow_up_1_week' | 'follow_up_24_hours';
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+  dismissed: boolean;
 }
 
 export interface DailyLog {
