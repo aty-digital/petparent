@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePets, generateId } from '@/lib/pet-context';
-import { scheduleReminders, requestNotificationPermission, checkNotificationPermissionStatus, getFrequencyLabel } from '@/lib/notifications';
+import { scheduleReminders, scheduleFollowUpReminders, requestNotificationPermission, checkNotificationPermissionStatus, cancelReminders } from '@/lib/notifications';
 import type { ReminderType } from '@/lib/notifications';
 import type { MedicalRecord, MedicationFrequency } from '@/lib/types';
 
@@ -69,7 +69,7 @@ export default function AddRecordScreen() {
   const { activePet, addRecord } = usePets();
 
   const [type, setType] = useState<RecordType>('vet_visit');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('Vet Visit');
   const [brand, setBrand] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -84,23 +84,41 @@ export default function AddRecordScreen() {
   const [saving, setSaving] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifModalType, setNotifModalType] = useState<'ask' | 'settings'>('ask');
+  const [notifModalTarget, setNotifModalTarget] = useState<'reminder' | 'followup'>('reminder');
+
+  const [followUpScheduled, setFollowUpScheduled] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpTimeDisplay, setFollowUpTimeDisplay] = useState<{ hour: string; minute: string; period: 'AM' | 'PM' }>({ hour: '9', minute: '00', period: 'AM' });
+  const [followUpRemindersEnabled, setFollowUpRemindersEnabled] = useState(false);
 
   const isMedication = type === 'medication';
   const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
+  const isVetVisit = type === 'vet_visit';
   const isValid = title.trim() && date;
 
   const buildReminderTimes = (): string[] => {
     return timeDisplays.map(td => to24Hour(td.hour, td.minute, td.period));
   };
 
+  const autoTitles: Partial<Record<RecordType, string>> = {
+    flea_treatment: 'Flea Treatment',
+    vet_visit: 'Vet Visit',
+  };
+
   const handleTypeChange = (newType: RecordType) => {
     Haptics.selectionAsync();
     const prevType = type;
     setType(newType);
-    if (newType === 'flea_treatment' && (title === '' || title === 'Flea Treatment')) {
-      setTitle('Flea Treatment');
-    } else if (prevType === 'flea_treatment' && title === 'Flea Treatment') {
+    const prevAutoTitle = autoTitles[prevType];
+    const newAutoTitle = autoTitles[newType];
+    if (newAutoTitle && (title === '' || title === prevAutoTitle)) {
+      setTitle(newAutoTitle);
+    } else if (prevAutoTitle && title === prevAutoTitle && !newAutoTitle) {
       setTitle('');
+    }
+    if (newType !== 'vet_visit') {
+      setFollowUpScheduled(false);
+      setFollowUpRemindersEnabled(false);
     }
   };
 
@@ -120,13 +138,15 @@ export default function AddRecordScreen() {
     setTimeDisplays(updated);
   };
 
-  const handleToggleReminders = async (val: boolean) => {
+  const handleToggleReminders = async (val: boolean, target: 'reminder' | 'followup' = 'reminder') => {
     if (val && Platform.OS !== 'web') {
       const permStatus = await checkNotificationPermissionStatus();
       if (permStatus === 'granted') {
-        setRemindersEnabled(true);
+        if (target === 'followup') setFollowUpRemindersEnabled(true);
+        else setRemindersEnabled(true);
         return;
       }
+      setNotifModalTarget(target);
       if (permStatus === 'can_ask') {
         setNotifModalType('ask');
         setShowNotifModal(true);
@@ -139,14 +159,16 @@ export default function AddRecordScreen() {
     if (val && Platform.OS === 'web') {
       return;
     }
-    setRemindersEnabled(val);
+    if (target === 'followup') setFollowUpRemindersEnabled(val);
+    else setRemindersEnabled(val);
   };
 
   const handleNotifModalAllow = async () => {
     setShowNotifModal(false);
     const granted = await requestNotificationPermission();
     if (granted) {
-      setRemindersEnabled(true);
+      if (notifModalTarget === 'followup') setFollowUpRemindersEnabled(true);
+      else setRemindersEnabled(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   };
@@ -158,6 +180,14 @@ export default function AddRecordScreen() {
         Linking.openSettings();
       }
     } catch (_e) {}
+  };
+
+  const handleFollowUpTimePart = (part: 'hour' | 'minute' | 'period', value: string) => {
+    const current = { ...followUpTimeDisplay };
+    if (part === 'hour') current.hour = value.replace(/[^0-9]/g, '');
+    else if (part === 'minute') current.minute = value.replace(/[^0-9]/g, '');
+    else current.period = value as 'AM' | 'PM';
+    setFollowUpTimeDisplay(current);
   };
 
   const handleSave = async () => {
@@ -180,6 +210,18 @@ export default function AddRecordScreen() {
       );
     }
 
+    let followUpNotifIds: string[] = [];
+    const followUpTime24 = to24Hour(followUpTimeDisplay.hour, followUpTimeDisplay.minute, followUpTimeDisplay.period);
+    if (isVetVisit && followUpScheduled && followUpDate && followUpRemindersEnabled) {
+      followUpNotifIds = await scheduleFollowUpReminders(
+        activePet.name,
+        clinic.trim(),
+        doctor.trim(),
+        followUpDate,
+        followUpTime24,
+      );
+    }
+
     const record: MedicalRecord = {
       id: generateId(),
       petId: activePet.id,
@@ -196,6 +238,11 @@ export default function AddRecordScreen() {
       reminderTimes: supportsReminders && currentlyTaking ? reminderTimes24 : undefined,
       remindersEnabled: supportsReminders && currentlyTaking ? remindersEnabled : undefined,
       notificationIds: notificationIds.length > 0 ? notificationIds : undefined,
+      followUpScheduled: isVetVisit ? followUpScheduled : undefined,
+      followUpDate: isVetVisit && followUpScheduled ? followUpDate : undefined,
+      followUpTime: isVetVisit && followUpScheduled ? followUpTime24 : undefined,
+      followUpRemindersEnabled: isVetVisit && followUpScheduled ? followUpRemindersEnabled : undefined,
+      followUpNotificationIds: followUpNotifIds.length > 0 ? followUpNotifIds : undefined,
     };
 
     await addRecord(record);
@@ -237,141 +284,248 @@ export default function AddRecordScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Title *</Text>
-          <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g., Amoxicillin 250mg" placeholderTextColor={C.textMuted} />
-
-          <Text style={styles.label}>Brand</Text>
-          <TextInput style={styles.input} value={brand} onChangeText={setBrand} placeholder="e.g., NexGard, Frontline, Bravecto" placeholderTextColor={C.textMuted} />
-
-          <Text style={styles.label}>Description</Text>
-          <TextInput style={[styles.input, { minHeight: 80 }]} value={description} onChangeText={setDescription} placeholder="Details about the visit, medication, or vaccine..." placeholderTextColor={C.textMuted} multiline textAlignVertical="top" />
-
-          <Text style={styles.label}>Date *</Text>
-          <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
-
-          {type === 'vaccination' && (
+          {isVetVisit ? (
             <>
-              <Text style={styles.label}>Expiration Date</Text>
-              <TextInput style={styles.input} value={expiresDate} onChangeText={setExpiresDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
-            </>
-          )}
+              <Text style={styles.label}>Title *</Text>
+              <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Vet Visit" placeholderTextColor={C.textMuted} />
 
-          {supportsReminders && (
-            <>
+              <Text style={styles.label}>Clinic</Text>
+              <TextInput style={styles.input} value={clinic} onChangeText={setClinic} placeholder="City Vet Clinic" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Doctor</Text>
+              <TextInput style={styles.input} value={doctor} onChangeText={setDoctor} placeholder="Dr. Smith" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Date *</Text>
+              <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Description</Text>
+              <TextInput style={[styles.input, { minHeight: 80 }]} value={description} onChangeText={setDescription} placeholder="Details about the visit..." placeholderTextColor={C.textMuted} multiline textAlignVertical="top" />
+
               <View style={styles.divider} />
 
-              <Pressable
-                style={styles.checkboxRow}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setCurrentlyTaking(!currentlyTaking);
-                }}
-              >
-                <View style={[styles.checkbox, currentlyTaking && styles.checkboxChecked]}>
-                  {currentlyTaking && <Ionicons name="checkmark" size={14} color={C.background} />}
-                </View>
-                <View style={styles.checkboxTextWrap}>
-                  <Text style={styles.checkboxLabel}>
-                    {type === 'flea_treatment' ? 'Ongoing Treatment' : type === 'vaccination' ? 'Recurring Vaccination' : 'Currently Taking'}
-                  </Text>
-                  <Text style={styles.checkboxSub}>
-                    {type === 'flea_treatment' ? 'Set up a recurring flea treatment reminder' : type === 'vaccination' ? 'Set a reminder for the next dose' : 'This medication is part of an ongoing treatment'}
-                  </Text>
-                </View>
-              </Pressable>
+              <Text style={styles.sectionTitle}>Schedule a Follow-Up Visit?</Text>
+              <View style={styles.followUpToggleRow}>
+                <Pressable
+                  style={[styles.followUpOption, followUpScheduled && styles.followUpOptionActive]}
+                  onPress={() => { Haptics.selectionAsync(); setFollowUpScheduled(true); }}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color={followUpScheduled ? C.accent : C.textMuted} />
+                  <Text style={[styles.followUpOptionText, followUpScheduled && { color: C.accent }]}>Yes</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.followUpOption, !followUpScheduled && styles.followUpOptionActive]}
+                  onPress={() => { Haptics.selectionAsync(); setFollowUpScheduled(false); setFollowUpRemindersEnabled(false); }}
+                >
+                  <Ionicons name="close-circle" size={18} color={!followUpScheduled ? C.textSecondary : C.textMuted} />
+                  <Text style={[styles.followUpOptionText, !followUpScheduled && { color: C.textSecondary }]}>No</Text>
+                </Pressable>
+              </View>
 
-              {currentlyTaking && (
-                <View style={styles.medSection}>
-                  <Text style={styles.label}>Frequency</Text>
-                  <View style={styles.freqGrid}>
-                    {FREQUENCIES.map(f => (
+              {followUpScheduled && (
+                <View style={styles.followUpSection}>
+                  <Text style={styles.label}>Follow-Up Date</Text>
+                  <TextInput style={styles.input} value={followUpDate} onChangeText={setFollowUpDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
+
+                  <Text style={styles.label}>Follow-Up Time</Text>
+                  <View style={styles.timeRow}>
+                    <Ionicons name="time-outline" size={18} color={C.accent} />
+                    <TextInput
+                      style={styles.timeInputSmall}
+                      value={followUpTimeDisplay.hour}
+                      onChangeText={(v) => handleFollowUpTimePart('hour', v)}
+                      placeholder="9"
+                      placeholderTextColor={C.textMuted}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                    />
+                    <Text style={styles.timeColon}>:</Text>
+                    <TextInput
+                      style={styles.timeInputSmall}
+                      value={followUpTimeDisplay.minute}
+                      onChangeText={(v) => handleFollowUpTimePart('minute', v)}
+                      placeholder="00"
+                      placeholderTextColor={C.textMuted}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                    />
+                    <View style={styles.ampmRow}>
                       <Pressable
-                        key={f.key}
-                        style={[styles.freqChip, frequency === f.key && styles.freqChipActive]}
-                        onPress={() => handleFrequencyChange(f.key)}
+                        style={[styles.ampmBtn, followUpTimeDisplay.period === 'AM' && styles.ampmBtnActive]}
+                        onPress={() => { Haptics.selectionAsync(); handleFollowUpTimePart('period', 'AM'); }}
                       >
-                        <Text style={[styles.freqText, frequency === f.key && styles.freqTextActive]}>{f.label}</Text>
+                        <Text style={[styles.ampmText, followUpTimeDisplay.period === 'AM' && styles.ampmTextActive]}>AM</Text>
                       </Pressable>
-                    ))}
+                      <Pressable
+                        style={[styles.ampmBtn, followUpTimeDisplay.period === 'PM' && styles.ampmBtnActive]}
+                        onPress={() => { Haptics.selectionAsync(); handleFollowUpTimePart('period', 'PM'); }}
+                      >
+                        <Text style={[styles.ampmText, followUpTimeDisplay.period === 'PM' && styles.ampmTextActive]}>PM</Text>
+                      </Pressable>
+                    </View>
                   </View>
 
-                  {frequency !== 'as_needed' && (
-                    <>
-                      <Text style={styles.label}>What time should this be administered?</Text>
-                      {timeDisplays.map((td, i) => (
-                          <View key={i} style={styles.timeRow}>
-                            <Ionicons name="time-outline" size={18} color={C.accent} />
-                            <TextInput
-                              style={styles.timeInputSmall}
-                              value={td.hour}
-                              onChangeText={(v) => handleTimePartChange(i, 'hour', v)}
-                              placeholder="12"
-                              placeholderTextColor={C.textMuted}
-                              keyboardType="number-pad"
-                              maxLength={2}
-                            />
-                            <Text style={styles.timeColon}>:</Text>
-                            <TextInput
-                              style={styles.timeInputSmall}
-                              value={td.minute}
-                              onChangeText={(v) => handleTimePartChange(i, 'minute', v)}
-                              placeholder="00"
-                              placeholderTextColor={C.textMuted}
-                              keyboardType="number-pad"
-                              maxLength={2}
-                            />
-                            <View style={styles.ampmRow}>
-                              <Pressable
-                                style={[styles.ampmBtn, td.period === 'AM' && styles.ampmBtnActive]}
-                                onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'AM'); }}
-                              >
-                                <Text style={[styles.ampmText, td.period === 'AM' && styles.ampmTextActive]}>AM</Text>
-                              </Pressable>
-                              <Pressable
-                                style={[styles.ampmBtn, td.period === 'PM' && styles.ampmBtnActive]}
-                                onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'PM'); }}
-                              >
-                                <Text style={[styles.ampmText, td.period === 'PM' && styles.ampmTextActive]}>PM</Text>
-                              </Pressable>
-                            </View>
-                            {timeDisplays.length > 1 && (
-                              <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
-                            )}
-                          </View>
-                      ))}
-
-                      <View style={styles.reminderToggle}>
-                        <View style={styles.reminderToggleLeft}>
-                          <Ionicons name="notifications-outline" size={20} color={remindersEnabled ? C.accent : C.textMuted} />
-                          <View>
-                            <Text style={styles.reminderToggleLabel}>Remind Me</Text>
-                            <Text style={styles.reminderToggleSub}>
-                              {Platform.OS === 'web'
-                                ? 'Available on mobile devices'
-                                : 'Get notified when it\'s time for a dose'}
-                            </Text>
-                          </View>
-                        </View>
-                        <Switch
-                          value={remindersEnabled}
-                          onValueChange={handleToggleReminders}
-                          trackColor={{ false: C.cardBorder, true: C.accentSoft }}
-                          thumbColor={remindersEnabled ? C.accent : C.textMuted}
-                          disabled={Platform.OS === 'web'}
-                        />
+                  <View style={styles.reminderToggle}>
+                    <View style={styles.reminderToggleLeft}>
+                      <Ionicons name="notifications-outline" size={20} color={followUpRemindersEnabled ? C.accent : C.textMuted} />
+                      <View>
+                        <Text style={styles.reminderToggleLabel}>Remind Me</Text>
+                        <Text style={styles.reminderToggleSub}>
+                          {Platform.OS === 'web'
+                            ? 'Available on mobile devices'
+                            : '1 week before & 24 hours before'}
+                        </Text>
                       </View>
-                    </>
-                  )}
+                    </View>
+                    <Switch
+                      value={followUpRemindersEnabled}
+                      onValueChange={(v) => handleToggleReminders(v, 'followup')}
+                      trackColor={{ false: C.cardBorder, true: C.accentSoft }}
+                      thumbColor={followUpRemindersEnabled ? C.accent : C.textMuted}
+                      disabled={Platform.OS === 'web'}
+                    />
+                  </View>
                 </View>
               )}
             </>
+          ) : (
+            <>
+              <Text style={styles.label}>Title *</Text>
+              <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g., Amoxicillin 250mg" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Brand</Text>
+              <TextInput style={styles.input} value={brand} onChangeText={setBrand} placeholder="e.g., NexGard, Frontline, Bravecto" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Description</Text>
+              <TextInput style={[styles.input, { minHeight: 80 }]} value={description} onChangeText={setDescription} placeholder="Details about the medication, vaccine, or treatment..." placeholderTextColor={C.textMuted} multiline textAlignVertical="top" />
+
+              <Text style={styles.label}>Date *</Text>
+              <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
+
+              {type === 'vaccination' && (
+                <>
+                  <Text style={styles.label}>Expiration Date</Text>
+                  <TextInput style={styles.input} value={expiresDate} onChangeText={setExpiresDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
+                </>
+              )}
+
+              {supportsReminders && (
+                <>
+                  <View style={styles.divider} />
+
+                  <Pressable
+                    style={styles.checkboxRow}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setCurrentlyTaking(!currentlyTaking);
+                    }}
+                  >
+                    <View style={[styles.checkbox, currentlyTaking && styles.checkboxChecked]}>
+                      {currentlyTaking && <Ionicons name="checkmark" size={14} color={C.background} />}
+                    </View>
+                    <View style={styles.checkboxTextWrap}>
+                      <Text style={styles.checkboxLabel}>
+                        {type === 'flea_treatment' ? 'Ongoing Treatment' : type === 'vaccination' ? 'Recurring Vaccination' : 'Currently Taking'}
+                      </Text>
+                      <Text style={styles.checkboxSub}>
+                        {type === 'flea_treatment' ? 'Set up a recurring flea treatment reminder' : type === 'vaccination' ? 'Set a reminder for the next dose' : 'This medication is part of an ongoing treatment'}
+                      </Text>
+                    </View>
+                  </Pressable>
+
+                  {currentlyTaking && (
+                    <View style={styles.medSection}>
+                      <Text style={styles.label}>Frequency</Text>
+                      <View style={styles.freqGrid}>
+                        {FREQUENCIES.map(f => (
+                          <Pressable
+                            key={f.key}
+                            style={[styles.freqChip, frequency === f.key && styles.freqChipActive]}
+                            onPress={() => handleFrequencyChange(f.key)}
+                          >
+                            <Text style={[styles.freqText, frequency === f.key && styles.freqTextActive]}>{f.label}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+
+                      {frequency !== 'as_needed' && (
+                        <>
+                          <Text style={styles.label}>What time should this be administered?</Text>
+                          {timeDisplays.map((td, i) => (
+                              <View key={i} style={styles.timeRow}>
+                                <Ionicons name="time-outline" size={18} color={C.accent} />
+                                <TextInput
+                                  style={styles.timeInputSmall}
+                                  value={td.hour}
+                                  onChangeText={(v) => handleTimePartChange(i, 'hour', v)}
+                                  placeholder="12"
+                                  placeholderTextColor={C.textMuted}
+                                  keyboardType="number-pad"
+                                  maxLength={2}
+                                />
+                                <Text style={styles.timeColon}>:</Text>
+                                <TextInput
+                                  style={styles.timeInputSmall}
+                                  value={td.minute}
+                                  onChangeText={(v) => handleTimePartChange(i, 'minute', v)}
+                                  placeholder="00"
+                                  placeholderTextColor={C.textMuted}
+                                  keyboardType="number-pad"
+                                  maxLength={2}
+                                />
+                                <View style={styles.ampmRow}>
+                                  <Pressable
+                                    style={[styles.ampmBtn, td.period === 'AM' && styles.ampmBtnActive]}
+                                    onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'AM'); }}
+                                  >
+                                    <Text style={[styles.ampmText, td.period === 'AM' && styles.ampmTextActive]}>AM</Text>
+                                  </Pressable>
+                                  <Pressable
+                                    style={[styles.ampmBtn, td.period === 'PM' && styles.ampmBtnActive]}
+                                    onPress={() => { Haptics.selectionAsync(); handleTimePartChange(i, 'period', 'PM'); }}
+                                  >
+                                    <Text style={[styles.ampmText, td.period === 'PM' && styles.ampmTextActive]}>PM</Text>
+                                  </Pressable>
+                                </View>
+                                {timeDisplays.length > 1 && (
+                                  <Text style={styles.timeDoseLabel}>Dose {i + 1}</Text>
+                                )}
+                              </View>
+                          ))}
+
+                          <View style={styles.reminderToggle}>
+                            <View style={styles.reminderToggleLeft}>
+                              <Ionicons name="notifications-outline" size={20} color={remindersEnabled ? C.accent : C.textMuted} />
+                              <View>
+                                <Text style={styles.reminderToggleLabel}>Remind Me</Text>
+                                <Text style={styles.reminderToggleSub}>
+                                  {Platform.OS === 'web'
+                                    ? 'Available on mobile devices'
+                                    : 'Get notified when it\'s time for a dose'}
+                                </Text>
+                              </View>
+                            </View>
+                            <Switch
+                              value={remindersEnabled}
+                              onValueChange={handleToggleReminders}
+                              trackColor={{ false: C.cardBorder, true: C.accentSoft }}
+                              thumbColor={remindersEnabled ? C.accent : C.textMuted}
+                              disabled={Platform.OS === 'web'}
+                            />
+                          </View>
+                        </>
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
+
+              <Text style={styles.label}>Doctor</Text>
+              <TextInput style={styles.input} value={doctor} onChangeText={setDoctor} placeholder="Dr. Smith" placeholderTextColor={C.textMuted} />
+
+              <Text style={styles.label}>Clinic</Text>
+              <TextInput style={styles.input} value={clinic} onChangeText={setClinic} placeholder="City Vet Clinic" placeholderTextColor={C.textMuted} />
+            </>
           )}
-
-          <Text style={styles.label}>Doctor</Text>
-          <TextInput style={styles.input} value={doctor} onChangeText={setDoctor} placeholder="Dr. Smith" placeholderTextColor={C.textMuted} />
-
-          <Text style={styles.label}>Clinic</Text>
-          <TextInput style={styles.input} value={clinic} onChangeText={setClinic} placeholder="City Vet Clinic" placeholderTextColor={C.textMuted} />
 
           <Pressable onPress={handleSave} disabled={!isValid || saving}>
             <LinearGradient
@@ -468,6 +622,12 @@ const styles = StyleSheet.create({
   reminderToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   reminderToggleLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
   reminderToggleSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textSecondary, marginTop: 1 },
+  sectionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.text, marginBottom: 10 },
+  followUpToggleRow: { flexDirection: 'row', gap: 10 },
+  followUpOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.card, borderRadius: 12, paddingVertical: 12, borderWidth: 1, borderColor: C.cardBorder },
+  followUpOptionActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
+  followUpOptionText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.textMuted },
+  followUpSection: { marginTop: 12 },
 });
 
 const modalStyles = StyleSheet.create({
