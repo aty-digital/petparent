@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import BrandLogo from '@/components/BrandLogo';
 import { usePets } from '@/lib/pet-context';
+import SitterHomeScreen from '@/components/SitterHomeScreen';
 
 const C = Colors.dark;
 
@@ -160,8 +161,12 @@ function ActiveMedCard({ record }: { record: any }) {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { activePet, pets, records, tasks, toggleTask, isLoading, userName } = usePets();
+  const { activePet, pets, records, tasks, toggleTask, isLoading, userName, userRole, activeView } = usePets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
+
+  if (userRole === 'sitter' && activeView === 'sitter') {
+    return <SitterHomeScreen />;
+  }
 
   const activeMeds = records.filter(
     r => r.petId === activePet?.id && r.type === 'medication' && r.currentlyTaking

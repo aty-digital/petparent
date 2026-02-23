@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import BrandLogo, { PawImage } from '@/components/BrandLogo';
-import { usePets, generateId, type UserRole } from '@/lib/pet-context';
+import { usePets, generateId, type UserRole, type ActiveView } from '@/lib/pet-context';
 import { useSubscription } from '@/lib/subscription-context';
 import { requestNotificationPermission } from '@/lib/notifications';
 import PaywallScreen from '@/components/PaywallScreen';
@@ -20,7 +20,7 @@ import type { Pet } from '@/lib/types';
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
+type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'sitter_followup' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 const yellowPaw = require('@/assets/images/paw-yellow.png');
@@ -46,7 +46,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const { signup, login, setUserRole, addPet, completeOnboarding } = usePets();
+  const { signup, login, setUserRole, addPet, completeOnboarding, setIsAlsoPetParent, setActiveView, userRole } = usePets();
   const { tier, canAddMorePets } = useSubscription();
 
   const [step, setStep] = useState<Step>('intro_welcome');
@@ -181,7 +181,11 @@ export default function OnboardingScreen() {
     setSelectedRole(role);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await setUserRole(role);
-    setTimeout(() => animateTransition('paywall'), 300);
+    if (role === 'sitter') {
+      setTimeout(() => animateTransition('sitter_followup'), 300);
+    } else {
+      setTimeout(() => animateTransition('paywall'), 300);
+    }
   };
 
   const handlePetCountNext = () => {
@@ -725,6 +729,62 @@ export default function OnboardingScreen() {
     </View>
   );
 
+  const renderSitterFollowup = () => (
+    <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
+      <View style={styles.formHeader}>
+        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
+          <MaterialCommunityIcons name="paw" size={32} color={C.accent} />
+        </View>
+        <Text style={styles.stepTitle}>Are you also a Pet Parent?</Text>
+        <Text style={styles.stepSubtitle}>
+          If you have your own pets, you can switch between your Sitter and Pet Parent views anytime.
+        </Text>
+      </View>
+
+      <View style={{ gap: 12, marginTop: 24 }}>
+        <Pressable
+          style={[styles.roleCard, { flexDirection: 'row', alignItems: 'center', padding: 18 }]}
+          onPress={async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await setIsAlsoPetParent(true);
+            await setActiveView('sitter');
+            animateTransition('paywall');
+          }}
+          testID="sitter-also-parent-yes"
+        >
+          <View style={[styles.roleIconWrap, { marginRight: 14, width: 48, height: 48, borderRadius: 24 }]}>
+            <Ionicons name="heart-circle" size={26} color={C.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.roleTitle, { fontSize: 16, marginBottom: 2 }]}>Yes, I have pets too</Text>
+            <Text style={styles.roleDesc}>I'll be able to switch between views</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
+        </Pressable>
+
+        <Pressable
+          style={[styles.roleCard, { flexDirection: 'row', alignItems: 'center', padding: 18 }]}
+          onPress={async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await setIsAlsoPetParent(false);
+            await setActiveView('sitter');
+            animateTransition('paywall');
+          }}
+          testID="sitter-also-parent-no"
+        >
+          <View style={[styles.roleIconWrap, { marginRight: 14, width: 48, height: 48, borderRadius: 24 }]}>
+            <MaterialCommunityIcons name="briefcase" size={24} color={C.textMuted} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.roleTitle, { fontSize: 16, marginBottom: 2 }]}>No, just pet sitting</Text>
+            <Text style={styles.roleDesc}>I care for other people's pets</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const renderPetCount = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <View style={styles.formHeader}>
@@ -1126,6 +1186,7 @@ export default function OnboardingScreen() {
       case 'signup': return renderSignup();
       case 'login': return renderLogin();
       case 'role': return renderRole();
+      case 'sitter_followup': return renderSitterFollowup();
       case 'paywall': return (
         <PaywallScreen
           onComplete={() => {

@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useSubscription } from '@/lib/subscription-context';
+import { usePets, type UserRole } from '@/lib/pet-context';
 
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -21,14 +22,14 @@ interface PaywallScreenProps {
   onBack?: () => void;
 }
 
-const FREE_FEATURES = [
+const PARENT_FREE_FEATURES = [
   { text: '1 pet profile', included: true },
   { text: '3 AI triage sessions/month', included: true },
   { text: 'Daily wellness logging', included: true },
   { text: 'Health task tracking', included: true },
 ];
 
-const PREMIUM_FEATURES = [
+const PARENT_PREMIUM_FEATURES = [
   { text: 'Unlimited pet profiles', included: true },
   { text: 'Unlimited AI triage sessions', included: true },
   { text: 'Daily wellness logging', included: true },
@@ -36,11 +37,40 @@ const PREMIUM_FEATURES = [
   { text: 'Priority support', included: true },
 ];
 
+const SITTER_FREE_FEATURES = [
+  { text: '1 pet profile (owned or shared)', included: true },
+  { text: '3 AI triage sessions/month', included: true },
+  { text: 'Add sitter notes & updates', included: true },
+];
+
+const SITTER_PREMIUM_FEATURES = [
+  { text: 'Unlimited pet profiles', included: true },
+  { text: 'Unlimited shared pets', included: true },
+  { text: 'Unlimited AI triage sessions', included: true },
+  { text: 'Add sitter notes & updates', included: true },
+  { text: 'Priority support', included: true },
+];
+
+const PRICING = {
+  parent: { monthly: '$5.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
+  sitter: { monthly: '$6.99', annual: '$69.99', monthlyEquiv: '$5.83', save: '~30%' },
+  vet: { monthly: '$5.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
+};
+
 export default function PaywallScreen({ onComplete, showBackButton, onBack }: PaywallScreenProps) {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const { purchasePackage, monthlyPackage, annualPackage, setPaywallComplete, restorePurchases } = useSubscription();
+  const { userRole } = usePets();
+
+  const roleKey = userRole === 'sitter' ? 'sitter' : userRole === 'vet' ? 'vet' : 'parent';
+  const pricing = PRICING[roleKey];
+  const FREE_FEATURES = roleKey === 'sitter' ? SITTER_FREE_FEATURES : PARENT_FREE_FEATURES;
+  const PREMIUM_FEATURES = roleKey === 'sitter' ? SITTER_PREMIUM_FEATURES : PARENT_PREMIUM_FEATURES;
+  const subtitleText = roleKey === 'sitter'
+    ? 'Unlock unlimited pet profiles and shared pet access for your sitting business'
+    : 'Unlock the full potential of PetParent for all your furry friends';
 
   const [selectedPlan, setSelectedPlan] = useState<PlanSelection>('annual');
   const [purchasing, setPurchasing] = useState(false);
@@ -135,7 +165,7 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
           </View>
           <Text style={styles.title}>Choose Your Plan</Text>
           <Text style={styles.subtitle}>
-            Unlock the full potential of PetParent for all your furry friends
+            {subtitleText}
           </Text>
         </Animated.View>
 
@@ -146,7 +176,7 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
             testID="plan-annual"
           >
             <Animated.View style={[styles.saveBadge, { transform: [{ scale: badgeScale }] }]}>
-              <Text style={styles.saveBadgeText}>Save ~30%</Text>
+              <Text style={styles.saveBadgeText}>Save {pricing.save}</Text>
             </Animated.View>
 
             <View style={styles.planCardHeader}>
@@ -161,14 +191,14 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
               </View>
               <View style={styles.planPricing}>
                 <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceSelected]}>
-                  $49.99
+                  {pricing.annual}
                 </Text>
                 <Text style={styles.planPeriod}>/year</Text>
               </View>
             </View>
 
             <View style={styles.planMonthlyBreakdown}>
-              <Text style={styles.monthlyEquiv}>$4.17/month</Text>
+              <Text style={styles.monthlyEquiv}>{pricing.monthlyEquiv}/month</Text>
             </View>
           </Pressable>
 
@@ -189,7 +219,7 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
               </View>
               <View style={styles.planPricing}>
                 <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceSelected]}>
-                  $5.99
+                  {pricing.monthly}
                 </Text>
                 <Text style={styles.planPeriod}>/month</Text>
               </View>

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
-import { usePets } from './pet-context';
+import { usePets, type UserRole } from './pet-context';
 
 export type SubscriptionTier = 'free' | 'premium';
 
@@ -50,7 +50,7 @@ function getCurrentMonth(): string {
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { userEmail } = usePets();
+  const { userEmail, userRole, sharedPets } = usePets();
   const [tier, setTier] = useState<SubscriptionTier>('free');
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -189,8 +189,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const canAddMorePets = useCallback((currentPetCount: number): boolean => {
     if (tier === 'premium') return true;
+    if (userRole === 'sitter') {
+      const totalProfiles = currentPetCount + sharedPets.length;
+      return totalProfiles < MAX_FREE_PETS;
+    }
     return currentPetCount < MAX_FREE_PETS;
-  }, [tier]);
+  }, [tier, userRole, sharedPets]);
 
   const canUseTriageThisMonth = useCallback((): boolean => {
     if (tier === 'premium') return true;

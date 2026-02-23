@@ -27,6 +27,7 @@ export default function SettingsScreen() {
   const {
     userName, setUserName, userEmail, userRole,
     updateEmail, updatePassword, logout, deleteAccount, pets,
+    isAlsoPetParent, activeView, setActiveView,
   } = usePets();
   const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases } = useSubscription();
 
@@ -274,6 +275,68 @@ export default function SettingsScreen() {
               </View>
             </View>
           </View>
+
+          {userRole === 'sitter' && isAlsoPetParent && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>ACTIVE VIEW</Text>
+              <View style={styles.card}>
+                <View style={{ flexDirection: 'row', gap: 8, padding: 4 }}>
+                  <Pressable
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      paddingVertical: 12,
+                      borderRadius: 10,
+                      backgroundColor: activeView === 'sitter' ? C.accentSoft : 'transparent',
+                    }}
+                    onPress={async () => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      await setActiveView('sitter');
+                    }}
+                    testID="switch-sitter-view"
+                  >
+                    <MaterialCommunityIcons name="paw" size={18} color={activeView === 'sitter' ? C.accent : C.textMuted} />
+                    <Text style={{
+                      fontFamily: activeView === 'sitter' ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                      fontSize: 14,
+                      color: activeView === 'sitter' ? C.accent : C.textMuted,
+                    }}>
+                      Pet Sitter
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      paddingVertical: 12,
+                      borderRadius: 10,
+                      backgroundColor: activeView === 'parent' ? C.accentSoft : 'transparent',
+                    }}
+                    onPress={async () => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      await setActiveView('parent');
+                    }}
+                    testID="switch-parent-view"
+                  >
+                    <Ionicons name="heart-circle" size={18} color={activeView === 'parent' ? C.accent : C.textMuted} />
+                    <Text style={{
+                      fontFamily: activeView === 'parent' ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                      fontSize: 14,
+                      color: activeView === 'parent' ? C.accent : C.textMuted,
+                    }}>
+                      Pet Parent
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>SUBSCRIPTION</Text>

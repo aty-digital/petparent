@@ -30,9 +30,11 @@ function getAge(birthDate: string): string {
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const { activePet, records, tasks, updatePet } = usePets();
+  const { activePet, records, tasks, updatePet, generateInviteCode, userRole } = usePets();
   const [careTips, setCareTips] = useState<string>('');
   const [loadingTips, setLoadingTips] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   const pickPhoto = async (useCamera: boolean) => {
     if (!activePet) return;
@@ -258,16 +260,63 @@ export default function ProfileScreen() {
         )}
 
         <View style={styles.qrSection}>
-          <Text style={styles.qrTitle}>Instant Visit</Text>
-          <Text style={styles.qrDesc}>Share this QR code with your vet or pet sitter for instant access to {activePet.name}'s profile.</Text>
-          <View style={styles.qrWrapper}>
-            <SvgQRCode
-              value={`petparent://pet/${activePet.id}`}
-              size={120}
-              backgroundColor={C.card}
-              color={C.accent}
-            />
-          </View>
+          <Text style={styles.qrTitle}>Share with Sitter</Text>
+          <Text style={styles.qrDesc}>Generate an invite code to share {activePet.name}'s profile with a pet sitter. They can enter the code in their app to access the profile.</Text>
+
+          {inviteCode ? (
+            <View style={{ alignItems: 'center', marginTop: 16 }}>
+              <View style={{ backgroundColor: C.accentSoft, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 28, color: C.accent, letterSpacing: 4, textAlign: 'center' }}>{inviteCode}</Text>
+              </View>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textMuted, textAlign: 'center' }}>Code expires in 7 days</Text>
+              <Pressable
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  try {
+                    await Share.share({ message: `Use this code to access ${activePet.name}'s profile in PetParent: ${inviteCode}` });
+                  } catch (e) {}
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder }}
+              >
+                <Ionicons name="share-outline" size={16} color={C.accent} />
+                <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.accent }}>Share Code</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={{ alignItems: 'center', marginTop: 12 }}>
+              <View style={styles.qrWrapper}>
+                <SvgQRCode
+                  value={`petparent://pet/${activePet.id}`}
+                  size={120}
+                  backgroundColor={C.card}
+                  color={C.accent}
+                />
+              </View>
+              <Pressable
+                onPress={async () => {
+                  setGeneratingCode(true);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  const result = await generateInviteCode();
+                  if (result) {
+                    setInviteCode(result.code);
+                  }
+                  setGeneratingCode(false);
+                }}
+                disabled={generatingCode}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, backgroundColor: C.accent }}
+                testID="generate-invite-code"
+              >
+                {generatingCode ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="key" size={16} color="#FFFFFF" />
+                    <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFFFFF' }}>Generate Invite Code</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
 
         <Pressable style={styles.shareBtn} onPress={handleShare}>
