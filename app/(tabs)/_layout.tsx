@@ -4,14 +4,19 @@ import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import PetSwitcher from "@/components/PetSwitcher";
+import SitterPetSwitcher from "@/components/SitterPetSwitcher";
 import React from "react";
+import { usePets } from "@/lib/pet-context";
 
 export default function TabLayout() {
   const C = Colors.dark;
+  const { userRole, activeView } = usePets();
+
+  const isSitterView = userRole === 'sitter' && activeView === 'sitter';
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <PetSwitcher />
+      {isSitterView ? <SitterPetSwitcher /> : <PetSwitcher />}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -56,20 +61,22 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="records"
-          options={{
-            title: "Records",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons name="clipboard-pulse" size={22} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="tracker"
           options={{
             title: "Tracker",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="calendar" size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="records"
+          options={{
+            title: isSitterView ? "Notifications" : "Records",
+            tabBarIcon: ({ color, size }) => isSitterView ? (
+              <Ionicons name="notifications" size={22} color={color} />
+            ) : (
+              <MaterialCommunityIcons name="clipboard-pulse" size={22} color={color} />
             ),
           }}
         />

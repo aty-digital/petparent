@@ -11,6 +11,7 @@ import SvgQRCode from 'react-native-qrcode-svg';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
 import { apiRequest } from '@/lib/query-client';
+import SitterProfileScreen from '@/components/SitterProfileScreen';
 
 const C = Colors.dark;
 
@@ -27,7 +28,7 @@ function getAge(birthDate: string): string {
   return months <= 0 ? 'Newborn' : `${months}m`;
 }
 
-export default function ProfileScreen() {
+function ParentProfileContent() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const { activePet, records, tasks, updatePet, generateInviteCode, userRole } = usePets();
@@ -337,6 +338,16 @@ export default function ProfileScreen() {
       </ScrollView>
     </View>
   );
+}
+
+export default function ProfileScreen() {
+  const { userRole, activeView } = usePets();
+
+  if (userRole === 'sitter' && activeView === 'sitter') {
+    return <SitterProfileScreen />;
+  }
+
+  return <ParentProfileContent />;
 }
 
 const styles = StyleSheet.create({

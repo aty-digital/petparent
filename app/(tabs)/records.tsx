@@ -105,7 +105,31 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
   );
 }
 
-export default function RecordsScreen() {
+function SitterNotificationsComingSoon() {
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Notifications</Text>
+        </View>
+      </View>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, marginTop: -60 }}>
+        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.dark.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+          <Ionicons name="notifications-outline" size={36} color={Colors.dark.textMuted} />
+        </View>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.dark.text, textAlign: 'center', marginBottom: 10 }}>Coming Soon</Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.dark.textSecondary, textAlign: 'center', lineHeight: 22 }}>
+          Push notifications for pet care updates, reminders from pet parents, and important alerts will be available in an upcoming release.
+        </Text>
+        <View style={{ marginTop: 24, backgroundColor: Colors.dark.accentSoft, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.dark.accentBorder }}>
+          <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.dark.accent }}>Stay tuned!</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RecordsContent() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const { activePet, records, deleteRecord } = usePets();
@@ -180,6 +204,16 @@ export default function RecordsScreen() {
       />
     </View>
   );
+}
+
+export default function RecordsScreen() {
+  const { userRole, activeView } = usePets();
+
+  if (userRole === 'sitter' && activeView === 'sitter') {
+    return <SitterNotificationsComingSoon />;
+  }
+
+  return <RecordsContent />;
 }
 
 const styles = StyleSheet.create({

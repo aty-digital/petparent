@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
 import type { DailyLog, DailyEntry } from '@/lib/types';
+import SitterTrackerScreen from '@/components/SitterTrackerScreen';
 
 const C = Colors.dark;
 
@@ -72,9 +73,7 @@ function DayLogCard({ log }: { log: DailyLog }) {
   );
 }
 
-export default function TrackerScreen() {
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+function ParentTrackerContent() {
   const { activePet, dailyLogs } = usePets();
 
   const petLogs = useMemo(() =>
@@ -129,6 +128,16 @@ export default function TrackerScreen() {
       </ScrollView>
     </View>
   );
+}
+
+export default function TrackerScreen() {
+  const { userRole, activeView } = usePets();
+
+  if (userRole === 'sitter' && activeView === 'sitter') {
+    return <SitterTrackerScreen />;
+  }
+
+  return <ParentTrackerContent />;
 }
 
 const styles = StyleSheet.create({

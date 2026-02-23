@@ -80,6 +80,8 @@ interface PetContextValue {
   sharedPets: SharedPet[];
   addSharedPet: (sp: SharedPet) => Promise<void>;
   removeSharedPet: (id: string) => Promise<void>;
+  selectedSharedPetId: string | null;
+  setSelectedSharedPetId: (id: string | null) => void;
   sitterNotes: SitterNote[];
   addSitterNote: (note: SitterNote) => Promise<void>;
   generateInviteCode: () => Promise<InviteCode | null>;
@@ -129,6 +131,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveViewState] = useState<ActiveView>('parent');
   const [sharedPets, setSharedPets] = useState<SharedPet[]>([]);
   const [sitterNotes, setSitterNotes] = useState<SitterNote[]>([]);
+  const [selectedSharedPetId, setSelectedSharedPetId] = useState<string | null>(null);
 
   useEffect(() => {
     restoreSession();
@@ -591,6 +594,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     isAlsoPetParent, setIsAlsoPetParent,
     activeView, setActiveView,
     sharedPets, addSharedPet, removeSharedPet,
+    selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
     generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,
@@ -604,6 +608,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     isAlsoPetParent, setIsAlsoPetParent,
     activeView, setActiveView,
     sharedPets, addSharedPet, removeSharedPet,
+    selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
     generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,

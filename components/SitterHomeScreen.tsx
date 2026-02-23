@@ -4,7 +4,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
@@ -64,17 +63,95 @@ function SharedPetCard({ shared }: { shared: SharedPet }) {
   );
 }
 
+function SelectedPetDetail({ shared }: { shared: SharedPet }) {
+  const { pet, ownerName } = shared;
+  const { sitterNotes } = usePets();
+  const age = getAge(pet.birthDate);
+  const petNotes = sitterNotes.filter(n => n.sharedPetId === shared.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  return (
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.detailCard}>
+        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          {pet.photoUri ? (
+            <Image source={{ uri: pet.photoUri }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: C.accent }} />
+          ) : (
+            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: C.accentSoft, borderWidth: 3, borderColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="paw" size={36} color={C.accent} />
+            </View>
+          )}
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: C.text, marginTop: 10 }}>{pet.name}</Text>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: C.textSecondary, marginTop: 2 }}>
+            {pet.breed}{age ? ` \u00B7 ${age}` : ''}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+          <View style={{ flex: 1, backgroundColor: C.surfaceElevated, borderRadius: 12, padding: 12, alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginBottom: 4 }}>WEIGHT</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.text }}>{pet.weight} {pet.weightUnit}</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: C.surfaceElevated, borderRadius: 12, padding: 12, alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginBottom: 4 }}>SPECIES</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.text, textTransform: 'capitalize' }}>{pet.species}</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: C.surfaceElevated, borderRadius: 12, padding: 12, alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginBottom: 4 }}>OWNER</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text }} numberOfLines={1}>{ownerName}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={{ marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.text }}>Your Notes</Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push(`/sitter-pet-detail?id=${shared.id}` as any);
+            }}
+          >
+            <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.accent }}>View All</Text>
+          </Pressable>
+        </View>
+
+        {petNotes.length === 0 ? (
+          <View style={{ backgroundColor: C.card, borderRadius: 14, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: C.cardBorder }}>
+            <Ionicons name="document-text-outline" size={28} color={C.textMuted} />
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: C.textMuted, marginTop: 8, textAlign: 'center' }}>
+              No notes yet. Tap "View All" to add your first note about {pet.name}.
+            </Text>
+          </View>
+        ) : (
+          petNotes.map(note => (
+            <View key={note.id} style={{ backgroundColor: C.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: C.cardBorder }}>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: C.text, lineHeight: 20 }}>{note.text}</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginTop: 6 }}>
+                {new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
 export default function SitterHomeScreen() {
-  const insets = useSafeAreaInsets();
-  const { sharedPets, isAlsoPetParent } = usePets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const { sharedPets, selectedSharedPetId } = usePets();
+
+  const selectedPet = selectedSharedPetId
+    ? sharedPets.find(sp => sp.id === selectedSharedPetId)
+    : null;
 
   if (sharedPets.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={[styles.headerBar, { paddingTop: topInset + 12 }]}>
-          <Text style={styles.headerTitle}>My Care Pets</Text>
-        </View>
         <View style={styles.emptyState}>
           <View style={styles.emptyIconWrap}>
             <MaterialCommunityIcons name="paw-off" size={40} color={C.textMuted} />
@@ -104,15 +181,16 @@ export default function SitterHomeScreen() {
     );
   }
 
+  if (selectedPet) {
+    return (
+      <View style={styles.container}>
+        <SelectedPetDetail shared={selectedPet} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={[styles.headerBar, { paddingTop: topInset + 12 }]}>
-        <Text style={styles.headerTitle}>My Care Pets</Text>
-        <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{sharedPets.length}</Text>
-        </View>
-      </View>
-
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
@@ -147,34 +225,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.background,
   },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    gap: 10,
-  },
-  headerTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 26,
-    color: C.text,
-  },
-  countBadge: {
-    backgroundColor: C.accentSoft,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: C.accentBorder,
-  },
-  countBadgeText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    color: C.accent,
-  },
   scroll: {
     paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingTop: 8,
+  },
+  detailCard: {
+    backgroundColor: C.card,
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
   petCard: {
     backgroundColor: C.card,
