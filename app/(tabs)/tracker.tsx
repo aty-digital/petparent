@@ -10,6 +10,7 @@ import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
 import type { DailyLog, DailyEntry } from '@/lib/types';
 import SitterTrackerScreen from '@/components/SitterTrackerScreen';
+import VetNewClientTab from '@/components/VetNewClientTab';
 
 const C = Colors.dark;
 
@@ -135,6 +136,10 @@ export default function TrackerScreen() {
 
   if (userRole === 'sitter' && activeView === 'sitter') {
     return <SitterTrackerScreen />;
+  }
+
+  if (userRole === 'vet' && activeView !== 'parent') {
+    return <VetNewClientTab />;
   }
 
   return <ParentTrackerContent />;

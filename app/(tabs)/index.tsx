@@ -11,6 +11,7 @@ import Colors from '@/constants/colors';
 import BrandLogo from '@/components/BrandLogo';
 import { usePets } from '@/lib/pet-context';
 import SitterHomeScreen from '@/components/SitterHomeScreen';
+import VetHomeScreen from '@/components/VetHomeScreen';
 
 const C = Colors.dark;
 
@@ -166,6 +167,10 @@ export default function HomeScreen() {
 
   if (userRole === 'sitter' && activeView === 'sitter') {
     return <SitterHomeScreen />;
+  }
+
+  if (userRole === 'vet' && activeView !== 'parent') {
+    return <VetHomeScreen />;
   }
 
   const activeMeds = records.filter(

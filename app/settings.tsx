@@ -28,7 +28,7 @@ export default function SettingsScreen() {
     userName, setUserName, userEmail, userRole,
     updateEmail, updatePassword, logout, deleteAccount, pets,
     isAlsoPetParent, setIsAlsoPetParent, activeView, setActiveView,
-    sharedPets,
+    sharedPets, clinicName, clinicAddress, vetClients,
   } = usePets();
   const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases } = useSubscription();
 
@@ -331,6 +331,49 @@ export default function SettingsScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={C.accent} />
                 </Pressable>
+              </View>
+            </View>
+          )}
+
+          {userRole === 'vet' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>CLINIC INFO</Text>
+              <View style={styles.card}>
+                <View style={styles.row}>
+                  <View style={styles.rowLeft}>
+                    <View style={styles.iconCircle}>
+                      <MaterialCommunityIcons name="hospital-building" size={18} color={C.accent} />
+                    </View>
+                    <View style={styles.rowContent}>
+                      <Text style={styles.rowLabel}>Clinic</Text>
+                      <Text style={styles.rowValue}>{clinicName || 'Not set'}</Text>
+                    </View>
+                  </View>
+                </View>
+                {clinicAddress ? (
+                  <View style={[styles.row, { borderTopWidth: 1, borderTopColor: C.cardBorder }]}>
+                    <View style={styles.rowLeft}>
+                      <View style={styles.iconCircle}>
+                        <Ionicons name="location-outline" size={18} color={C.accent} />
+                      </View>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>Address</Text>
+                        <Text style={styles.rowValue}>{clinicAddress}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
+                <View style={[styles.row, { borderTopWidth: 1, borderTopColor: C.cardBorder }]}>
+                  <View style={styles.rowLeft}>
+                    <View style={styles.iconCircle}>
+                      <MaterialCommunityIcons name="stethoscope" size={18} color={C.accent} />
+                    </View>
+                    <View style={styles.rowContent}>
+                      <Text style={styles.rowLabel}>Client Pets</Text>
+                      <Text style={styles.rowValue}>{vetClients.length}</Text>
+                    </View>
+                  </View>
+                </View>
               </View>
             </View>
           )}

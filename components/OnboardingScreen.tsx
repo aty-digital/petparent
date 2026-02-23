@@ -20,7 +20,7 @@ import type { Pet } from '@/lib/types';
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'sitter_followup' | 'sitter_upsell' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
+type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'sitter_followup' | 'sitter_upsell' | 'vet_clinic' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 const yellowPaw = require('@/assets/images/paw-yellow.png');
@@ -46,7 +46,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const { signup, login, setUserRole, addPet, completeOnboarding, setIsAlsoPetParent, setActiveView, userRole } = usePets();
+  const { signup, login, setUserRole, addPet, completeOnboarding, setIsAlsoPetParent, setActiveView, userRole, setClinicInfo } = usePets();
   const { tier, canAddMorePets } = useSubscription();
 
   const [step, setStep] = useState<Step>('intro_welcome');
@@ -75,6 +75,9 @@ export default function OnboardingScreen() {
   const [petAgeMode, setPetAgeMode] = useState<'date' | 'age'>('date');
   const [petBirthDate, setPetBirthDate] = useState('');
   const [petAgeYears, setPetAgeYears] = useState('');
+
+  const [vetClinicName, setVetClinicName] = useState('');
+  const [vetClinicAddress, setVetClinicAddress] = useState('');
 
   const [loading, setLoading] = useState(false);
 
@@ -184,6 +187,8 @@ export default function OnboardingScreen() {
     await setUserRole(role);
     if (role === 'sitter') {
       setTimeout(() => animateTransition('sitter_followup'), 300);
+    } else if (role === 'vet') {
+      setTimeout(() => animateTransition('vet_clinic'), 300);
     } else {
       setTimeout(() => animateTransition('paywall'), 300);
     }
@@ -870,6 +875,71 @@ export default function OnboardingScreen() {
     </View>
   );
 
+  const renderVetClinic = () => (
+    <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
+      <View style={styles.formHeader}>
+        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
+          <MaterialCommunityIcons name="hospital-building" size={32} color={C.accent} />
+        </View>
+        <Text style={styles.stepTitle}>Your Clinic Info</Text>
+        <Text style={styles.stepSubtitle}>
+          Tell us about your veterinary practice
+        </Text>
+      </View>
+
+      <View style={{ gap: 16, marginTop: 24 }}>
+        <View>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: C.textMuted, letterSpacing: 1.2, marginBottom: 8 }}>CLINIC NAME</Text>
+          <TextInput
+            style={styles.input}
+            value={vetClinicName}
+            onChangeText={setVetClinicName}
+            placeholder="e.g. Happy Paws Veterinary"
+            placeholderTextColor={C.textMuted}
+            autoCapitalize="words"
+          />
+        </View>
+        <View>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: C.textMuted, letterSpacing: 1.2, marginBottom: 8 }}>CLINIC ADDRESS</Text>
+          <TextInput
+            style={styles.input}
+            value={vetClinicAddress}
+            onChangeText={setVetClinicAddress}
+            placeholder="e.g. 123 Main St, Anytown"
+            placeholderTextColor={C.textMuted}
+            autoCapitalize="words"
+          />
+        </View>
+      </View>
+
+      <View style={{ position: 'absolute', bottom: bottomInset + 24, left: 24, right: 24 }}>
+        <Pressable
+          onPress={async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            if (vetClinicName.trim() || vetClinicAddress.trim()) {
+              await setClinicInfo(vetClinicName.trim(), vetClinicAddress.trim());
+            }
+            animateTransition('paywall');
+          }}
+          style={[styles.submitBtn, { opacity: 1 }]}
+          testID="vet-clinic-continue"
+        >
+          <LinearGradient colors={[C.gradient.start, C.gradient.end]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitBtnGradient}>
+            <Text style={styles.submitBtnText}>Continue</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable
+          onPress={() => { animateTransition('paywall'); }}
+          style={{ alignSelf: 'center', marginTop: 12 }}
+        >
+          <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 14, color: C.textMuted }}>Skip for now</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const renderPetCount = () => (
     <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
       <View style={styles.formHeader}>
@@ -1156,17 +1226,25 @@ export default function OnboardingScreen() {
 
         <Text style={[styles.completeTitle, { fontSize: 26 }]}>You're All Set!</Text>
         <Text style={[styles.completeSubtitle, { marginBottom: 24 }]}>
-          {petCount === 1
+          {selectedRole === 'vet'
+            ? 'Your veterinary account is ready. Start managing client pets today.'
+            : sitterOnlyMode
+            ? 'Your pet sitter account is ready. Accept invite codes to start.'
+            : petCount === 1
             ? 'Your pet profile is ready. Start tracking their health today.'
             : `${petCount} pet profiles created. Start tracking their health today.`}
         </Text>
 
         <View style={styles.completeFeaturesWrap}>
-          {[
+          {(selectedRole === 'vet' ? [
+            { icon: 'people', label: 'Manage client pets' },
+            { icon: 'medical', label: 'Track patient records' },
+            { icon: 'chatbubble-ellipses', label: 'AI symptom check' },
+          ] : [
             { icon: 'pulse', label: 'Log daily wellness' },
             { icon: 'medical', label: 'Track medical records' },
             { icon: 'chatbubble-ellipses', label: 'AI symptom check' },
-          ].map((f, i) => (
+          ]).map((f, i) => (
             <View key={i} style={styles.completeFeatureRow}>
               <View style={styles.completeFeatureIcon}>
                 <Ionicons name={f.icon as any} size={18} color={C.accent} />
@@ -1273,10 +1351,11 @@ export default function OnboardingScreen() {
       case 'role': return renderRole();
       case 'sitter_followup': return renderSitterFollowup();
       case 'sitter_upsell': return renderSitterUpsell();
+      case 'vet_clinic': return renderVetClinic();
       case 'paywall': return (
         <PaywallScreen
           onComplete={() => {
-            if (sitterOnlyMode) {
+            if (sitterOnlyMode || selectedRole === 'vet') {
               animateTransition('notifications');
             } else {
               if (tier === 'free') {
@@ -1291,6 +1370,8 @@ export default function OnboardingScreen() {
               animateTransition('sitter_followup');
             } else if (selectedRole === 'sitter') {
               animateTransition('sitter_upsell');
+            } else if (selectedRole === 'vet') {
+              animateTransition('vet_clinic');
             } else {
               animateTransition('role');
             }

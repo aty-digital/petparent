@@ -13,10 +13,11 @@ export default function TabLayout() {
   const { userRole, activeView } = usePets();
 
   const isSitterView = userRole === 'sitter' && activeView === 'sitter';
+  const isVetView = userRole === 'vet' && activeView !== 'parent';
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      {isSitterView ? <SitterPetSwitcher /> : <PetSwitcher />}
+      {isSitterView ? <SitterPetSwitcher /> : isVetView ? null : <PetSwitcher />}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -63,8 +64,10 @@ export default function TabLayout() {
         <Tabs.Screen
           name="tracker"
           options={{
-            title: "Tracker",
-            tabBarIcon: ({ color, size }) => (
+            title: isVetView ? "New Client" : "Tracker",
+            tabBarIcon: ({ color, size }) => isVetView ? (
+              <Ionicons name="person-add" size={22} color={color} />
+            ) : (
               <Ionicons name="calendar" size={22} color={color} />
             ),
           }}
@@ -78,6 +81,7 @@ export default function TabLayout() {
             ) : (
               <MaterialCommunityIcons name="clipboard-pulse" size={22} color={color} />
             ),
+            ...(isVetView ? { href: null } : {}),
           }}
         />
         <Tabs.Screen
@@ -87,7 +91,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="paw" size={22} color={color} />
             ),
-            ...(isSitterView ? { href: null } : {}),
+            ...(isSitterView || isVetView ? { href: null } : {}),
           }}
         />
       </Tabs>
