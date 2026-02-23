@@ -186,10 +186,13 @@ export default function OnboardingScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await setUserRole(role);
     if (role === 'sitter') {
+      await setActiveView('sitter');
       setTimeout(() => animateTransition('sitter_followup'), 300);
     } else if (role === 'vet') {
+      await setActiveView('vet');
       setTimeout(() => animateTransition('vet_clinic'), 300);
     } else {
+      await setActiveView('parent');
       setTimeout(() => animateTransition('paywall'), 300);
     }
   };
