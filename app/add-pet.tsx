@@ -32,7 +32,9 @@ export default function AddPetScreen() {
   const [name, setName] = useState('');
   const [breed, setBreed] = useState('');
   const [species, setSpecies] = useState<Pet['species']>('dog');
+  const [ageMode, setAgeMode] = useState<'date' | 'age'>('date');
   const [birthDate, setBirthDate] = useState('');
+  const [ageYears, setAgeYears] = useState('');
   const [weight, setWeight] = useState('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -67,7 +69,11 @@ export default function AddPetScreen() {
       name: name.trim(),
       breed: breed.trim(),
       species,
-      birthDate: birthDate || new Date().toISOString().split('T')[0],
+      birthDate: ageMode === 'date' && birthDate.trim()
+        ? (() => { const parts = birthDate.trim().split('/'); return parts.length === 3 ? `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}` : new Date().toISOString().split('T')[0]; })()
+        : ageMode === 'age' && ageYears.trim()
+          ? (() => { const d = new Date(); d.setFullYear(d.getFullYear() - (parseInt(ageYears) || 0)); return d.toISOString().split('T')[0]; })()
+          : new Date().toISOString().split('T')[0],
       weight: parseFloat(weight) || 0,
       weightUnit,
       gender,
@@ -195,28 +201,69 @@ export default function AddPetScreen() {
           <Text style={styles.label}>Breed *</Text>
           <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder="e.g., Golden Retriever" placeholderTextColor={C.textMuted} />
 
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Birth Date</Text>
-              <TextInput style={styles.input} value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
-            </View>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Gender</Text>
-              <View style={styles.genderRow}>
-                <Pressable
-                  style={[styles.genderBtn, gender === 'male' && styles.genderBtnActive]}
-                  onPress={() => { Haptics.selectionAsync(); setGender('male'); }}
-                >
-                  <Text style={[styles.genderText, gender === 'male' && styles.genderTextActive]}>Male</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.genderBtn, gender === 'female' && styles.genderBtnActive]}
-                  onPress={() => { Haptics.selectionAsync(); setGender('female'); }}
-                >
-                  <Text style={[styles.genderText, gender === 'female' && styles.genderTextActive]}>Female</Text>
-                </Pressable>
-              </View>
-            </View>
+          <Text style={styles.label}>Age / Birthday</Text>
+          <View style={styles.toggleRow}>
+            <Pressable
+              style={[styles.toggleBtn, ageMode === 'date' && styles.toggleBtnActive]}
+              onPress={() => { Haptics.selectionAsync(); setAgeMode('date'); }}
+            >
+              <Text style={[styles.toggleText, ageMode === 'date' && styles.toggleTextActive]}>Birth Date</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toggleBtn, ageMode === 'age' && styles.toggleBtnActive]}
+              onPress={() => { Haptics.selectionAsync(); setAgeMode('age'); }}
+            >
+              <Text style={[styles.toggleText, ageMode === 'age' && styles.toggleTextActive]}>Approx. Age</Text>
+            </Pressable>
+          </View>
+          {ageMode === 'date' ? (
+            <TextInput
+              style={[styles.input, { marginTop: 8 }]}
+              value={birthDate}
+              onChangeText={(text) => {
+                const cleaned = text.replace(/[^0-9/]/g, '');
+                if (cleaned.length <= 10) {
+                  if (cleaned.length === 2 && birthDate.length < 2) setBirthDate(cleaned + '/');
+                  else if (cleaned.length === 5 && birthDate.length < 5) setBirthDate(cleaned + '/');
+                  else setBirthDate(cleaned);
+                }
+              }}
+              placeholder="MM/DD/YYYY"
+              placeholderTextColor={C.textMuted}
+              keyboardType="number-pad"
+              maxLength={10}
+              testID="pet-birth-date"
+            />
+          ) : (
+            <TextInput
+              style={[styles.input, { marginTop: 8 }]}
+              value={ageYears}
+              onChangeText={(text) => setAgeYears(text.replace(/[^0-9]/g, ''))}
+              placeholder="e.g., 5"
+              placeholderTextColor={C.textMuted}
+              keyboardType="number-pad"
+              maxLength={2}
+              testID="pet-age-years"
+            />
+          )}
+          <Text style={styles.helperText}>
+            {ageMode === 'date' ? 'Enter your pet\'s date of birth' : 'Enter your pet\'s approximate age in years'}
+          </Text>
+
+          <Text style={styles.label}>Gender</Text>
+          <View style={styles.genderRow}>
+            <Pressable
+              style={[styles.genderBtn, gender === 'male' && styles.genderBtnActive]}
+              onPress={() => { Haptics.selectionAsync(); setGender('male'); }}
+            >
+              <Text style={[styles.genderText, gender === 'male' && styles.genderTextActive]}>Male</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.genderBtn, gender === 'female' && styles.genderBtnActive]}
+              onPress={() => { Haptics.selectionAsync(); setGender('female'); }}
+            >
+              <Text style={[styles.genderText, gender === 'female' && styles.genderTextActive]}>Female</Text>
+            </Pressable>
           </View>
 
           <View style={styles.row}>
@@ -387,6 +434,12 @@ const styles = StyleSheet.create({
   genderBtnActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
   genderText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: C.textMuted },
   genderTextActive: { color: C.accent },
+  toggleRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  toggleBtn: { flex: 1, backgroundColor: C.card, borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: C.cardBorder },
+  toggleBtnActive: { backgroundColor: C.accentSoft, borderColor: C.accent },
+  toggleText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: C.textMuted },
+  toggleTextActive: { color: C.accent },
+  helperText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, marginTop: 4 },
   saveBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
 });
