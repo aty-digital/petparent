@@ -5,13 +5,16 @@
 PetParent (AI Vet Assistant & Pet Health Log) is a pet health management mobile application built with Expo (React Native). It allows pet parents to track their pets' health through medical records, daily wellness logging, health task scheduling, and an AI-powered symptom triage system. The app uses a dark green-themed UI with a focus on pet wellness tracking and veterinary guidance.
 
 Key features:
-- **Onboarding Flow**: Multi-step guided onboarding with sign-up/login, role selection (Pet Parent/Sitter/Vet), pet count picker, and multi-pet profile creation loop. Gates main app until completed.
+- **Onboarding Flow**: Multi-step guided onboarding with sign-up/login, role selection (Pet Parent/Sitter/Vet), pet count picker, and multi-pet profile creation loop. Sitters get a follow-up step asking if they're also a Pet Parent (dual-role support). Gates main app until completed.
 - **Pet Profiles**: Add/edit multiple pets with breed, species, weight, vet info
 - **Medical Records**: Track vet visits, vaccinations, and medications with optional medication reminders
 - **Daily Wellness Tracker**: Log daily metrics (water, food, energy, mood, bathroom, sleep) on a 1-5 scale
 - **Health Tasks**: Schedule medication, vaccination, supplement, and checkup tasks
 - **AI Symptom Triage**: Submit symptoms and get AI-powered urgency assessment via OpenAI
 - **Pet Profile/QR Code**: Share pet info, view vaccination compliance, get AI care tips
+- **Pet Sitter Role**: Sitters see a dedicated home screen with shared pets. They can accept invite codes to access Pet Parent's pet profiles in read-only mode and add their own notes/updates. Sitters have separate paywall pricing ($6.99/month, $69.99/year vs Pet Parent's $5.99/$49.99).
+- **Dual-Role Support**: Sitters who are also Pet Parents can switch between "Pet Sitter" and "Pet Parent" views via the Settings page. In Pet Parent mode, they see the full Pet Parent experience with their own pets.
+- **Pet Sharing**: Pet Parents can generate invite codes (valid 7 days) from the Profile tab to share pet profiles with sitters. Sitters enter codes via the accept-invite screen to add shared pets.
 
 ## User Preferences
 
