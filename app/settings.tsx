@@ -27,7 +27,8 @@ export default function SettingsScreen() {
   const {
     userName, setUserName, userEmail, userRole,
     updateEmail, updatePassword, logout, deleteAccount, pets,
-    isAlsoPetParent, activeView, setActiveView,
+    isAlsoPetParent, setIsAlsoPetParent, activeView, setActiveView,
+    sharedPets,
   } = usePets();
   const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases } = useSubscription();
 
@@ -136,6 +137,27 @@ export default function SettingsScreen() {
       ]
     );
   };
+
+  const handleBecomePetParent = () => {
+    Alert.alert(
+      'Become a Pet Parent',
+      'This will enable Pet Parent mode so you can add and manage your own pets alongside your sitting duties.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Enable',
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await setIsAlsoPetParent(true);
+            await setActiveView('parent');
+            Alert.alert('Welcome!', 'You\'re now also a Pet Parent. You can switch between views anytime in Settings.');
+          },
+        },
+      ]
+    );
+  };
+
+  const isSitter = userRole === 'sitter';
 
   if (showPaywall) {
     return (
@@ -273,8 +295,45 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </View>
+
+              {isSitter && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.row}>
+                    <View style={styles.rowLeft}>
+                      <View style={styles.iconCircle}>
+                        <MaterialCommunityIcons name="dog" size={18} color={C.accent} />
+                      </View>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>Pets in Care</Text>
+                        <Text style={styles.rowValue}>{sharedPets.length} shared</Text>
+                      </View>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
           </View>
+
+          {isSitter && !isAlsoPetParent && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>PET PARENT</Text>
+              <View style={styles.card}>
+                <Pressable style={styles.row} onPress={handleBecomePetParent} testID="settings-become-parent">
+                  <View style={styles.rowLeft}>
+                    <View style={[styles.iconCircle, { backgroundColor: '#FDE8C8' }]}>
+                      <Ionicons name="heart-circle" size={18} color="#D97706" />
+                    </View>
+                    <View style={styles.rowContent}>
+                      <Text style={styles.rowLabel}>Got a pet of your own?</Text>
+                      <Text style={styles.rowValue}>Enable Pet Parent mode to track your own pets</Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={C.accent} />
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {userRole === 'sitter' && isAlsoPetParent && (
             <View style={styles.section}>

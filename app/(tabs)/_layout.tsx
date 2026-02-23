@@ -87,6 +87,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="paw" size={22} color={color} />
             ),
+            ...(isSitterView ? { href: null } : {}),
           }}
         />
       </Tabs>
