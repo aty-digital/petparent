@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult } from './types';
+import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult, SharedPet, SitterNote, InviteCode } from './types';
 
 function secureKey(email: string): string {
   const sanitized = email.toLowerCase().trim().replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -43,6 +43,8 @@ async function deleteSecurePassword(email: string): Promise<void> {
 
 export type UserRole = 'pet_parent' | 'sitter' | 'vet';
 
+export type ActiveView = 'parent' | 'sitter';
+
 interface PetContextValue {
   pets: Pet[];
   activePet: Pet | null;
@@ -71,6 +73,17 @@ interface PetContextValue {
   userEmail: string;
   userRole: UserRole | null;
   setUserRole: (role: UserRole) => Promise<void>;
+  isAlsoPetParent: boolean;
+  setIsAlsoPetParent: (val: boolean) => Promise<void>;
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => Promise<void>;
+  sharedPets: SharedPet[];
+  addSharedPet: (sp: SharedPet) => Promise<void>;
+  removeSharedPet: (id: string) => Promise<void>;
+  sitterNotes: SitterNote[];
+  addSitterNote: (note: SitterNote) => Promise<void>;
+  generateInviteCode: () => Promise<InviteCode | null>;
+  acceptInviteCode: (code: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -112,6 +125,10 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRoleState] = useState<UserRole | null>(null);
+  const [isAlsoPetParent, setIsAlsoPetParentState] = useState(false);
+  const [activeView, setActiveViewState] = useState<ActiveView>('parent');
+  const [sharedPets, setSharedPets] = useState<SharedPet[]>([]);
+  const [sitterNotes, setSitterNotes] = useState<SitterNote[]>([]);
 
   useEffect(() => {
     restoreSession();
@@ -128,11 +145,15 @@ export function PetProvider({ children }: { children: ReactNode }) {
     setUserEmail('');
     setUserRoleState(null);
     setOnboardingComplete(false);
+    setIsAlsoPetParentState(false);
+    setActiveViewState('parent');
+    setSharedPets([]);
+    setSitterNotes([]);
   }, []);
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData] = await Promise.all([
+      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData, alsoPetParentData, activeViewData, sharedPetsData, sitterNotesData] = await Promise.all([
         AsyncStorage.getItem(userKey(email, 'pets')),
         AsyncStorage.getItem(userKey(email, 'active_pet')),
         AsyncStorage.getItem(userKey(email, 'records')),
@@ -142,6 +163,10 @@ export function PetProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(userKey(email, 'name')),
         AsyncStorage.getItem(userKey(email, 'onboarding_complete')),
         AsyncStorage.getItem(userKey(email, 'role')),
+        AsyncStorage.getItem(userKey(email, 'also_pet_parent')),
+        AsyncStorage.getItem(userKey(email, 'active_view')),
+        AsyncStorage.getItem(userKey(email, 'shared_pets')),
+        AsyncStorage.getItem(userKey(email, 'sitter_notes')),
       ]);
 
       const loadedPets: Pet[] = petsData ? JSON.parse(petsData) : [];
@@ -161,6 +186,10 @@ export function PetProvider({ children }: { children: ReactNode }) {
       setUserEmail(email);
       if (onboardingData === 'true') setOnboardingComplete(true);
       if (roleData) setUserRoleState(roleData as UserRole);
+      setIsAlsoPetParentState(alsoPetParentData === 'true');
+      if (activeViewData) setActiveViewState(activeViewData as ActiveView);
+      setSharedPets(sharedPetsData ? JSON.parse(sharedPetsData) : []);
+      setSitterNotes(sitterNotesData ? JSON.parse(sitterNotesData) : []);
     } catch (e) {
       console.error('Failed to load user data:', e);
     }
@@ -325,6 +354,100 @@ export function PetProvider({ children }: { children: ReactNode }) {
     }
   }, [userEmail]);
 
+  const setIsAlsoPetParent = useCallback(async (val: boolean) => {
+    setIsAlsoPetParentState(val);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'also_pet_parent'), val ? 'true' : 'false');
+    }
+  }, [userEmail]);
+
+  const setActiveView = useCallback(async (view: ActiveView) => {
+    setActiveViewState(view);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'active_view'), view);
+    }
+  }, [userEmail]);
+
+  const addSharedPet = useCallback(async (sp: SharedPet) => {
+    const updated = [...sharedPets, sp];
+    setSharedPets(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'shared_pets'), JSON.stringify(updated));
+    }
+  }, [sharedPets, userEmail]);
+
+  const removeSharedPet = useCallback(async (id: string) => {
+    const updated = sharedPets.filter(s => s.id !== id);
+    setSharedPets(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'shared_pets'), JSON.stringify(updated));
+    }
+  }, [sharedPets, userEmail]);
+
+  const addSitterNote = useCallback(async (note: SitterNote) => {
+    const updated = [note, ...sitterNotes];
+    setSitterNotes(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'sitter_notes'), JSON.stringify(updated));
+    }
+  }, [sitterNotes, userEmail]);
+
+  const generateInviteCode = useCallback(async (): Promise<InviteCode | null> => {
+    if (!activePet || !userEmail) return null;
+    const code = generateId().substring(0, 8).toUpperCase();
+    const now = new Date();
+    const expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const invite: InviteCode = {
+      code,
+      petId: activePet.id,
+      ownerEmail: userEmail,
+      ownerName: userName,
+      createdAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+    };
+    const existingCodes = await AsyncStorage.getItem('@pawguard_invite_codes') || '[]';
+    const codes: InviteCode[] = JSON.parse(existingCodes);
+    codes.push(invite);
+    await AsyncStorage.setItem('@pawguard_invite_codes', JSON.stringify(codes));
+    return invite;
+  }, [activePet, userEmail, userName]);
+
+  const acceptInviteCode = useCallback(async (code: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const existingCodes = await AsyncStorage.getItem('@pawguard_invite_codes') || '[]';
+      const codes: InviteCode[] = JSON.parse(existingCodes);
+      const invite = codes.find(c => c.code === code.toUpperCase());
+      if (!invite) {
+        return { success: false, error: 'Invalid invite code. Please check and try again.' };
+      }
+      if (new Date(invite.expiresAt) < new Date()) {
+        return { success: false, error: 'This invite code has expired. Ask the pet parent for a new one.' };
+      }
+      const alreadyShared = sharedPets.find(s => s.pet.id === invite.petId);
+      if (alreadyShared) {
+        return { success: false, error: 'This pet is already shared with you.' };
+      }
+      const ownerPetsData = await AsyncStorage.getItem(userKey(invite.ownerEmail, 'pets'));
+      const ownerPets: Pet[] = ownerPetsData ? JSON.parse(ownerPetsData) : [];
+      const pet = ownerPets.find(p => p.id === invite.petId);
+      if (!pet) {
+        return { success: false, error: 'Pet profile not found. The owner may have removed it.' };
+      }
+      const shared: SharedPet = {
+        id: generateId(),
+        pet,
+        ownerName: invite.ownerName,
+        ownerEmail: invite.ownerEmail,
+        sharedAt: new Date().toISOString(),
+        inviteCode: code.toUpperCase(),
+      };
+      await addSharedPet(shared);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: 'Something went wrong. Please try again.' };
+    }
+  }, [sharedPets, addSharedPet]);
+
   const signup = useCallback(async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const normalizedEmail = email.toLowerCase().trim();
     const accounts = await getAccountsRegistry();
@@ -393,7 +516,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     const existingNew = accounts.find(a => a.email === normalizedNew);
     if (existingNew) return;
 
-    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'subscription_tier', 'triage_usage', 'paywall_complete'];
+    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes'];
     for (const suffix of suffixes) {
       const val = await AsyncStorage.getItem(userKey(oldEmail, suffix));
       if (val !== null) {
@@ -444,7 +567,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     if (!userEmail) return;
     const normalizedEmail = userEmail.toLowerCase().trim();
 
-    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete'];
+    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes'];
     const keysToRemove = suffixes.map(s => userKey(normalizedEmail, s));
     await AsyncStorage.multiRemove(keysToRemove);
     await deleteSecurePassword(normalizedEmail);
@@ -465,6 +588,11 @@ export function PetProvider({ children }: { children: ReactNode }) {
     triageResults, addTriageResult,
     isLoading, userName, setUserName,
     onboardingComplete, userEmail, userRole, setUserRole,
+    isAlsoPetParent, setIsAlsoPetParent,
+    activeView, setActiveView,
+    sharedPets, addSharedPet, removeSharedPet,
+    sitterNotes, addSitterNote,
+    generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,
     updateEmail, updatePassword, deleteAccount,
   }), [pets, activePet, setActivePetId, addPet, updatePet, deletePet,
@@ -473,6 +601,11 @@ export function PetProvider({ children }: { children: ReactNode }) {
     tasks, addTask, toggleTask, deleteTask,
     triageResults, addTriageResult, isLoading, userName, setUserName,
     onboardingComplete, userEmail, userRole, setUserRole,
+    isAlsoPetParent, setIsAlsoPetParent,
+    activeView, setActiveView,
+    sharedPets, addSharedPet, removeSharedPet,
+    sitterNotes, addSitterNote,
+    generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,
     updateEmail, updatePassword, deleteAccount]);
 

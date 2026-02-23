@@ -92,3 +92,30 @@ export interface TriageResult {
   actionSteps: string[];
   disclaimer: string;
 }
+
+export interface SharedPet {
+  id: string;
+  pet: Pet;
+  ownerName: string;
+  ownerEmail: string;
+  sharedAt: string;
+  inviteCode: string;
+}
+
+export interface SitterNote {
+  id: string;
+  sharedPetId: string;
+  petId: string;
+  text: string;
+  createdAt: string;
+  sitterName: string;
+}
+
+export interface InviteCode {
+  code: string;
+  petId: string;
+  ownerEmail: string;
+  ownerName: string;
+  createdAt: string;
+  expiresAt: string;
+}
