@@ -20,7 +20,7 @@ import type { Pet } from '@/lib/types';
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'sitter_followup' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
+type Step = 'intro_welcome' | 'intro_pack' | 'intro_how' | 'welcome' | 'signup' | 'login' | 'role' | 'sitter_followup' | 'sitter_upsell' | 'paywall' | 'petcount' | 'petcreate' | 'notifications' | 'complete';
 
 const testimonialAvatar = require('@/assets/images/testimonial-avatar.png');
 const yellowPaw = require('@/assets/images/paw-yellow.png');
@@ -60,6 +60,7 @@ export default function OnboardingScreen() {
   const [signupError, setSignupError] = useState('');
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [sitterOnlyMode, setSitterOnlyMode] = useState(false);
   const [petCount, setPetCount] = useState(1);
 
   const [currentPetIndex, setCurrentPetIndex] = useState(0);
@@ -748,7 +749,7 @@ export default function OnboardingScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             await setIsAlsoPetParent(true);
             await setActiveView('sitter');
-            animateTransition('paywall');
+            animateTransition('sitter_upsell');
           }}
           testID="sitter-also-parent-yes"
         >
@@ -768,6 +769,7 @@ export default function OnboardingScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             await setIsAlsoPetParent(false);
             await setActiveView('sitter');
+            setSitterOnlyMode(true);
             animateTransition('paywall');
           }}
           testID="sitter-also-parent-no"
@@ -780,6 +782,89 @@ export default function OnboardingScreen() {
             <Text style={styles.roleDesc}>I care for other people's pets</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderSitterUpsell = () => (
+    <View style={[{ flex: 1, backgroundColor: '#FAF5EB' }, { paddingTop: topInset + 16 }]}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <View style={{ alignItems: 'center', marginBottom: 8 }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="sparkles" size={28} color={C.accent} />
+          </View>
+        </View>
+
+        <Text style={[introStyles.howTitle, { fontSize: 24, lineHeight: 32, marginBottom: 6, textAlign: 'center' }]}>
+          Great! Let's get your{'\n'}personal pack added to
+        </Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 26, color: C.accent, textAlign: 'center', marginBottom: 4 }}>
+          PetParent
+        </Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: C.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 20 }}>
+          The #1 AI Vet Assistant & Pet Health Log app.
+        </Text>
+
+        <View style={[introStyles.howCardsList, { gap: 12 }]}>
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <Ionicons name="chatbubble-ellipses" size={18} color={C.accent} />
+              </View>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Symptom Triage</Text>
+            </View>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.
+            </Text>
+          </View>
+
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <MaterialCommunityIcons name="clipboard-text" size={18} color={C.accent} />
+              </View>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Daily Logs & Health Records</Text>
+            </View>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Keep daily logs of your pet's behavior, vet visits, and vaccines. Track medications for your entire pack {'\u2013'} all in one place.
+            </Text>
+          </View>
+
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <Ionicons name="notifications" size={18} color={C.accent} />
+              </View>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Smart Reminders</Text>
+            </View>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Never forget flea treatments, annual checkups, or medications again.
+            </Text>
+          </View>
+
+          <View style={[introStyles.howCard, { padding: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
+                <MaterialCommunityIcons name="paw" size={18} color={C.accent} />
+              </View>
+              <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>Shareable Pet Profiles</Text>
+            </View>
+            <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
+              Share your pet's health habits and medication schedule directly with your vet, pet sitter and family members.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[introStyles.bottomBtnWrapCream, { paddingBottom: bottomInset + 20 }]}>
+        <Pressable
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); animateTransition('paywall'); }}
+          style={introStyles.introBtnGreen}
+          testID="sitter-upsell-continue"
+        >
+          <Text style={introStyles.introBtnGreenText}>Continue</Text>
+          <Ionicons name="arrow-forward" size={22} color="#FFFFFF" />
         </Pressable>
       </View>
     </View>
@@ -1187,16 +1272,29 @@ export default function OnboardingScreen() {
       case 'login': return renderLogin();
       case 'role': return renderRole();
       case 'sitter_followup': return renderSitterFollowup();
+      case 'sitter_upsell': return renderSitterUpsell();
       case 'paywall': return (
         <PaywallScreen
           onComplete={() => {
-            if (tier === 'free') {
-              setPetCount(1);
+            if (sitterOnlyMode) {
+              animateTransition('notifications');
+            } else {
+              if (tier === 'free') {
+                setPetCount(1);
+              }
+              animateTransition('petcount');
             }
-            animateTransition('petcount');
           }}
           showBackButton={true}
-          onBack={() => animateTransition('role')}
+          onBack={() => {
+            if (sitterOnlyMode) {
+              animateTransition('sitter_followup');
+            } else if (selectedRole === 'sitter') {
+              animateTransition('sitter_upsell');
+            } else {
+              animateTransition('role');
+            }
+          }}
         />
       );
       case 'petcount': return renderPetCount();
