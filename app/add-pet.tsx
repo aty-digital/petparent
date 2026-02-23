@@ -25,7 +25,7 @@ const SPECIES_OPTIONS: { key: Pet['species']; label: string; icon: string }[] = 
 export default function AddPetScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const { addPet, pets } = usePets();
+  const { addPet, pets, userRole } = usePets();
   const { canAddMorePets, tier, monthlyPackage, annualPackage, purchasePackage, restorePurchases } = useSubscription();
   const allowed = canAddMorePets(pets.length);
 
@@ -81,11 +81,12 @@ export default function AddPetScreen() {
     router.back();
   };
 
-  const monthlyPrice = monthlyPackage?.product?.priceString || '$5.99/month';
-  const annualPrice = annualPackage?.product?.priceString || '$49.99/year';
+  const isSitterAccount = userRole === 'sitter';
+  const monthlyPrice = monthlyPackage?.product?.priceString || (isSitterAccount ? '$6.99/month' : '$5.99/month');
+  const annualPrice = annualPackage?.product?.priceString || (isSitterAccount ? '$69.99/year' : '$49.99/year');
   const annualMonthly = annualPackage?.product?.price
     ? `$${(annualPackage.product.price / 12).toFixed(2)}/mo`
-    : '$4.17/mo';
+    : (isSitterAccount ? '$5.83/mo' : '$4.17/mo');
   const savingsPercent = (monthlyPackage?.product?.price && annualPackage?.product?.price)
     ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
     : 30;
