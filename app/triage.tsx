@@ -119,12 +119,12 @@ export default function TriageScreen() {
     setSymptoms(prev => prev ? `${prev}, ${s.toLowerCase()}` : s);
   };
 
-  const isSitterAccount = userRole === 'sitter';
-  const monthlyPrice = monthlyPackage?.product?.priceString || (isSitterAccount ? '$6.99/month' : '$5.99/month');
-  const annualPrice = annualPackage?.product?.priceString || (isSitterAccount ? '$69.99/year' : '$49.99/year');
+  const rolePricing = userRole === 'vet' ? { m: '$25.99/month', a: '$259.99/year', ae: '$21.67/mo' } : userRole === 'sitter' ? { m: '$6.99/month', a: '$69.99/year', ae: '$5.83/mo' } : { m: '$5.99/month', a: '$49.99/year', ae: '$4.17/mo' };
+  const monthlyPrice = monthlyPackage?.product?.priceString || rolePricing.m;
+  const annualPrice = annualPackage?.product?.priceString || rolePricing.a;
   const annualMonthly = annualPackage?.product?.price
     ? `$${(annualPackage.product.price / 12).toFixed(2)}/mo`
-    : (isSitterAccount ? '$5.83/mo' : '$4.17/mo');
+    : rolePricing.ae;
   const savingsPercent = (monthlyPackage?.product?.price && annualPackage?.product?.price)
     ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
     : 30;

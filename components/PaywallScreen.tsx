@@ -51,10 +51,24 @@ const SITTER_PREMIUM_FEATURES = [
   { text: 'Priority support', included: true },
 ];
 
+const VET_FREE_FEATURES = [
+  { text: '1 client / pet card', included: true },
+  { text: 'Just testing the platform', included: true },
+  { text: 'Basic patient records', included: true },
+];
+
+const VET_PREMIUM_FEATURES = [
+  { text: 'Unlimited client profiles', included: true },
+  { text: 'Unlimited patient records', included: true },
+  { text: 'Unlimited AI triage sessions', included: true },
+  { text: 'Client invite & sharing', included: true },
+  { text: 'Priority support', included: true },
+];
+
 const PRICING = {
   parent: { monthly: '$5.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
   sitter: { monthly: '$6.99', annual: '$69.99', monthlyEquiv: '$5.83', save: '~30%' },
-  vet: { monthly: '$5.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
+  vet: { monthly: '$25.99', annual: '$259.99', monthlyEquiv: '$21.67', save: '~17%' },
 };
 
 export default function PaywallScreen({ onComplete, showBackButton, onBack }: PaywallScreenProps) {
@@ -66,10 +80,12 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
 
   const roleKey = userRole === 'sitter' ? 'sitter' : userRole === 'vet' ? 'vet' : 'parent';
   const pricing = PRICING[roleKey];
-  const FREE_FEATURES = roleKey === 'sitter' ? SITTER_FREE_FEATURES : PARENT_FREE_FEATURES;
-  const PREMIUM_FEATURES = roleKey === 'sitter' ? SITTER_PREMIUM_FEATURES : PARENT_PREMIUM_FEATURES;
+  const FREE_FEATURES = roleKey === 'sitter' ? SITTER_FREE_FEATURES : roleKey === 'vet' ? VET_FREE_FEATURES : PARENT_FREE_FEATURES;
+  const PREMIUM_FEATURES = roleKey === 'sitter' ? SITTER_PREMIUM_FEATURES : roleKey === 'vet' ? VET_PREMIUM_FEATURES : PARENT_PREMIUM_FEATURES;
   const subtitleText = roleKey === 'sitter'
     ? 'Unlock unlimited pet profiles and shared pet access for your sitting business'
+    : roleKey === 'vet'
+    ? 'Unlock unlimited client profiles and full practice management tools'
     : 'Unlock the full potential of PetParent for all your furry friends';
 
   const [selectedPlan, setSelectedPlan] = useState<PlanSelection>('annual');

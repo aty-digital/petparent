@@ -43,7 +43,7 @@ async function deleteSecurePassword(email: string): Promise<void> {
 
 export type UserRole = 'pet_parent' | 'sitter' | 'vet';
 
-export type ActiveView = 'parent' | 'sitter';
+export type ActiveView = 'parent' | 'sitter' | 'vet';
 
 interface PetContextValue {
   pets: Pet[];
@@ -84,6 +84,14 @@ interface PetContextValue {
   setSelectedSharedPetId: (id: string | null) => void;
   sitterNotes: SitterNote[];
   addSitterNote: (note: SitterNote) => Promise<void>;
+  clinicName: string;
+  clinicAddress: string;
+  setClinicInfo: (name: string, address: string) => Promise<void>;
+  vetClients: SharedPet[];
+  addVetClient: (sp: SharedPet) => Promise<void>;
+  removeVetClient: (id: string) => Promise<void>;
+  selectedVetClientId: string | null;
+  setSelectedVetClientId: (id: string | null) => void;
   generateInviteCode: () => Promise<InviteCode | null>;
   acceptInviteCode: (code: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -132,6 +140,10 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [sharedPets, setSharedPets] = useState<SharedPet[]>([]);
   const [sitterNotes, setSitterNotes] = useState<SitterNote[]>([]);
   const [selectedSharedPetId, setSelectedSharedPetId] = useState<string | null>(null);
+  const [clinicName, setClinicNameState] = useState('');
+  const [clinicAddress, setClinicAddressState] = useState('');
+  const [vetClients, setVetClients] = useState<SharedPet[]>([]);
+  const [selectedVetClientId, setSelectedVetClientId] = useState<string | null>(null);
 
   useEffect(() => {
     restoreSession();
@@ -152,11 +164,14 @@ export function PetProvider({ children }: { children: ReactNode }) {
     setActiveViewState('parent');
     setSharedPets([]);
     setSitterNotes([]);
+    setClinicNameState('');
+    setClinicAddressState('');
+    setVetClients([]);
   }, []);
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData, alsoPetParentData, activeViewData, sharedPetsData, sitterNotesData] = await Promise.all([
+      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData, alsoPetParentData, activeViewData, sharedPetsData, sitterNotesData, clinicNameData, clinicAddressData, vetClientsData] = await Promise.all([
         AsyncStorage.getItem(userKey(email, 'pets')),
         AsyncStorage.getItem(userKey(email, 'active_pet')),
         AsyncStorage.getItem(userKey(email, 'records')),
@@ -170,6 +185,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(userKey(email, 'active_view')),
         AsyncStorage.getItem(userKey(email, 'shared_pets')),
         AsyncStorage.getItem(userKey(email, 'sitter_notes')),
+        AsyncStorage.getItem(userKey(email, 'clinic_name')),
+        AsyncStorage.getItem(userKey(email, 'clinic_address')),
+        AsyncStorage.getItem(userKey(email, 'vet_clients')),
       ]);
 
       const loadedPets: Pet[] = petsData ? JSON.parse(petsData) : [];
@@ -193,6 +211,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
       if (activeViewData) setActiveViewState(activeViewData as ActiveView);
       setSharedPets(sharedPetsData ? JSON.parse(sharedPetsData) : []);
       setSitterNotes(sitterNotesData ? JSON.parse(sitterNotesData) : []);
+      if (clinicNameData) setClinicNameState(clinicNameData);
+      if (clinicAddressData) setClinicAddressState(clinicAddressData);
+      setVetClients(vetClientsData ? JSON.parse(vetClientsData) : []);
     } catch (e) {
       console.error('Failed to load user data:', e);
     }
@@ -395,6 +416,31 @@ export function PetProvider({ children }: { children: ReactNode }) {
     }
   }, [sitterNotes, userEmail]);
 
+  const setClinicInfo = useCallback(async (name: string, address: string) => {
+    setClinicNameState(name);
+    setClinicAddressState(address);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'clinic_name'), name);
+      await AsyncStorage.setItem(userKey(userEmail, 'clinic_address'), address);
+    }
+  }, [userEmail]);
+
+  const addVetClient = useCallback(async (sp: SharedPet) => {
+    const updated = [...vetClients, sp];
+    setVetClients(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'vet_clients'), JSON.stringify(updated));
+    }
+  }, [vetClients, userEmail]);
+
+  const removeVetClient = useCallback(async (id: string) => {
+    const updated = vetClients.filter(s => s.id !== id);
+    setVetClients(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'vet_clients'), JSON.stringify(updated));
+    }
+  }, [vetClients, userEmail]);
+
   const generateInviteCode = useCallback(async (): Promise<InviteCode | null> => {
     if (!activePet || !userEmail) return null;
     const code = generateId().substring(0, 8).toUpperCase();
@@ -596,6 +642,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
     sharedPets, addSharedPet, removeSharedPet,
     selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
+    clinicName, clinicAddress, setClinicInfo,
+    vetClients, addVetClient, removeVetClient,
+    selectedVetClientId, setSelectedVetClientId,
     generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,
     updateEmail, updatePassword, deleteAccount,
@@ -610,6 +659,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
     sharedPets, addSharedPet, removeSharedPet,
     selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
+    clinicName, clinicAddress, setClinicInfo,
+    vetClients, addVetClient, removeVetClient,
+    selectedVetClientId, setSelectedVetClientId,
     generateInviteCode, acceptInviteCode,
     signup, login, logout, completeOnboarding,
     updateEmail, updatePassword, deleteAccount]);
