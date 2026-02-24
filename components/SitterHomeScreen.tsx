@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { usePets } from '@/lib/pet-context';
+import { useSubscription } from '@/lib/subscription-context';
 import type { SharedPet } from '@/lib/types';
 
 const C = Colors.dark;
@@ -63,6 +64,45 @@ function SharedPetCard({ shared }: { shared: SharedPet }) {
   );
 }
 
+function SitterTriageCTA() {
+  const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier } = useSubscription();
+  const triageAllowed = canUseTriageThisMonth();
+
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/triage' as any);
+      }}
+    >
+      <LinearGradient
+        colors={[C.accent, C.accentDim]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.triageCTA}
+      >
+        <View style={styles.triageCTATop}>
+          <View style={styles.triageIcon}>
+            <MaterialCommunityIcons name="stethoscope" size={18} color="#FFFFFF" />
+          </View>
+          <View>
+            <Text style={styles.triageTitle}>AI Symptom Triage</Text>
+            <Text style={styles.triageSubtitle}>
+              {tier === 'free'
+                ? `${triageUsedThisMonth}/${maxFreeTriagePerMonth} free sessions used`
+                : 'Unlimited sessions'}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.triageButton}>
+          <Text style={styles.triageButtonText}>Triage Now</Text>
+          <MaterialCommunityIcons name="arrow-right" size={16} color={C.accent} />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
 function SelectedPetDetail({ shared }: { shared: SharedPet }) {
   const { pet, ownerName } = shared;
   const { sitterNotes } = usePets();
@@ -105,6 +145,10 @@ function SelectedPetDetail({ shared }: { shared: SharedPet }) {
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text }} numberOfLines={1}>{ownerName}</Text>
           </View>
         </View>
+      </View>
+
+      <View style={{ marginTop: 12 }}>
+        <SitterTriageCTA />
       </View>
 
       <View style={{ marginTop: 4 }}>
@@ -195,6 +239,7 @@ export default function SitterHomeScreen() {
         contentContainerStyle={[styles.scroll, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
+        <SitterTriageCTA />
         {sharedPets.map(shared => (
           <SharedPetCard key={shared.id} shared={shared} />
         ))}
@@ -365,4 +410,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
+  triageCTA: { borderRadius: 16, padding: 20, marginBottom: 16 },
+  triageCTATop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  triageIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  triageTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#FFFFFF' },
+  triageSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  triageButton: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  triageButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.accent },
 });

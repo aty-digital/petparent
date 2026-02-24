@@ -32,8 +32,15 @@ const QUICK_SYMPTOMS = [
 export default function TriageScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const { activePet, addTriageResult, addRecord, userRole } = usePets();
+  const { activePet, addTriageResult, addRecord, userRole, sharedPets, selectedSharedPetId } = usePets();
   const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier, recordTriageUsage, monthlyPackage, annualPackage, purchasePackage, restorePurchases } = useSubscription();
+
+  const isSitter = userRole === 'sitter';
+  const selectedSharedPet = isSitter && selectedSharedPetId
+    ? sharedPets.find(sp => sp.id === selectedSharedPetId)
+    : null;
+  const triagePet = isSitter ? selectedSharedPet?.pet ?? null : activePet;
+
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +65,7 @@ export default function TriageScreen() {
   };
 
   const handleTriage = async () => {
-    if (!symptoms.trim() || !activePet) return;
+    if (!symptoms.trim() || !triagePet) return;
     if (!triageAllowed && tier === 'free') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       setShowPaywall(true);
@@ -69,20 +76,20 @@ export default function TriageScreen() {
     setError('');
 
     try {
-      const age = getAge(activePet.birthDate);
+      const age = getAge(triagePet.birthDate);
       const res = await apiRequest('POST', '/api/triage', {
         symptoms: symptoms.trim(),
-        petName: activePet.name,
-        breed: activePet.breed,
-        species: activePet.species,
+        petName: triagePet.name,
+        breed: triagePet.breed,
+        species: triagePet.species,
         age,
-        weight: `${activePet.weight} ${activePet.weightUnit}`,
+        weight: `${triagePet.weight} ${triagePet.weightUnit}`,
       });
       const data = await res.json();
 
       const result: TriageResult = {
         id: generateId(),
-        petId: activePet.id,
+        petId: triagePet.id,
         date: new Date().toISOString(),
         description: symptoms.trim(),
         urgency: data.urgency || 'low',
@@ -96,15 +103,17 @@ export default function TriageScreen() {
 
       await addTriageResult(result);
       await recordTriageUsage();
-      await addRecord({
-        id: generateId(),
-        petId: activePet.id,
-        type: 'triage',
-        title: 'Symptom Triage Log',
-        description: `${result.urgencyLabel}: ${symptoms.trim().substring(0, 100)}`,
-        date: new Date().toISOString(),
-        status: result.urgency,
-      });
+      if (!isSitter) {
+        await addRecord({
+          id: generateId(),
+          petId: triagePet.id,
+          type: 'triage',
+          title: 'Symptom Triage Log',
+          description: `${result.urgencyLabel}: ${symptoms.trim().substring(0, 100)}`,
+          date: new Date().toISOString(),
+          status: result.urgency,
+        });
+      }
 
       router.replace({ pathname: '/triage-result', params: { resultId: result.id } });
     } catch (e) {
@@ -229,13 +238,36 @@ export default function TriageScreen() {
             <View style={{ width: 40 }} />
           </View>
 
-          {activePet && (
+          {triagePet && (
             <View style={styles.petBadge}>
               <View style={styles.petBadgeAvatar}>
                 <Ionicons name="paw" size={16} color={C.accent} />
               </View>
-              <Text style={styles.petBadgeName}>{activePet.name}</Text>
-              <Text style={styles.petBadgeBreed}>{activePet.breed} {'\u00B7'} {getAge(activePet.birthDate)}</Text>
+              <View>
+                <Text style={styles.petBadgeName}>{triagePet.name}</Text>
+                <Text style={styles.petBadgeBreed}>{triagePet.breed} {'\u00B7'} {getAge(triagePet.birthDate)}</Text>
+              </View>
+              {isSitter && selectedSharedPet && (
+                <View style={{ marginLeft: 'auto', backgroundColor: C.accentSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                  <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 11, color: C.accent }}>via {selectedSharedPet.ownerName}</Text>
+                </View>
+              )}
+            </View>
+          )}
+          {isSitter && !triagePet && (
+            <View style={{
+              backgroundColor: C.dangerSoft,
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <Ionicons name="alert-circle" size={20} color={C.danger} />
+              <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.danger, flex: 1 }}>
+                Select a pet from your home screen first to run a triage session.
+              </Text>
             </View>
           )}
 
@@ -312,19 +344,19 @@ export default function TriageScreen() {
 
           <Pressable
             onPress={handleTriage}
-            disabled={!symptoms.trim() || loading}
+            disabled={!symptoms.trim() || loading || !triagePet}
             style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <LinearGradient
-              colors={symptoms.trim() && !loading ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+              colors={symptoms.trim() && !loading && triagePet ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
               style={styles.submitBtn}
             >
               {loading ? (
                 <ActivityIndicator color={C.background} />
               ) : (
                 <>
-                  <MaterialCommunityIcons name="stethoscope" size={18} color={symptoms.trim() ? C.background : C.textMuted} />
-                  <Text style={[styles.submitText, !symptoms.trim() && { color: C.textMuted }]}>Analyze Symptoms</Text>
+                  <MaterialCommunityIcons name="stethoscope" size={18} color={symptoms.trim() && triagePet ? C.background : C.textMuted} />
+                  <Text style={[styles.submitText, (!symptoms.trim() || !triagePet) && { color: C.textMuted }]}>Analyze Symptoms</Text>
                 </>
               )}
             </LinearGradient>
