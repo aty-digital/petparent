@@ -162,7 +162,7 @@ function ActiveMedCard({ record }: { record: any }) {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { activePet, pets, records, tasks, toggleTask, isLoading, userName, userRole, activeView } = usePets();
+  const { activePet, pets, records, tasks, toggleTask, isLoading, userName, userRole, activeView, setActiveView } = usePets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
 
   if (userRole === 'sitter' && activeView === 'sitter') {
@@ -215,6 +215,19 @@ export default function HomeScreen() {
               <Text style={styles.addPetText}>Add Your Pet</Text>
             </LinearGradient>
           </Pressable>
+          {userRole === 'sitter' && activeView === 'parent' && (
+            <Pressable
+              style={styles.switchBackButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setActiveView('sitter');
+              }}
+              testID="switch-back-sitter"
+            >
+              <Ionicons name="swap-horizontal" size={18} color={C.accent} />
+              <Text style={styles.switchBackText}>Switch to Sitter View</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     );
@@ -373,6 +386,23 @@ const styles = StyleSheet.create({
   addPetButton: { marginTop: 24, borderRadius: 14, overflow: 'hidden' },
   addPetGradient: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 28, paddingVertical: 14 },
   addPetText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: C.background },
+  switchBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.accent,
+    backgroundColor: C.accentSoft,
+  },
+  switchBackText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: C.accent,
+  },
   activeMedCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.cardBorder },
   activeMedIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(212, 165, 116, 0.15)', alignItems: 'center', justifyContent: 'center' },
   activeMedInfo: { flex: 1, marginLeft: 10 },
