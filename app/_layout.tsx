@@ -13,6 +13,7 @@ import { PetProvider, usePets } from "@/lib/pet-context";
 import { SubscriptionProvider } from "@/lib/subscription-context";
 import { NotificationProvider } from "@/lib/notification-context";
 import SwoopNotification from "@/components/SwoopNotification";
+import SitterNoteModal from "@/components/SitterNoteModal";
 import OnboardingScreen from "@/components/OnboardingScreen";
 import {
   useFonts,
@@ -62,6 +63,7 @@ function RootLayoutNav() {
     <>
       <MainStack />
       <SwoopNotification />
+      <SitterNoteModal />
     </>
   );
 }

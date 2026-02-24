@@ -21,6 +21,7 @@ const CATEGORY_CONFIG: Record<string, { icon: string; label: string; color: stri
   mood: { icon: 'happy', label: 'Mood', color: '#9333EA', iconSet: 'ion' },
   bathroom: { icon: 'leaf', label: 'Bathroom', color: '#059669', iconSet: 'ion' },
   sleep: { icon: 'moon', label: 'Sleep Quality', color: '#1E40AF', iconSet: 'ion' },
+  sitter_note: { icon: 'chatbox-ellipses', label: 'Sitter Note', color: '#7C3AED', iconSet: 'ion' },
   custom: { icon: 'ellipsis-horizontal', label: 'Other', color: '#64748B', iconSet: 'ion' },
 };
 
@@ -35,6 +36,7 @@ const VALUE_LABELS: Record<number, string> = {
 function EntryCard({ entry }: { entry: DailyEntry }) {
   const config = CATEGORY_CONFIG[entry.category] || CATEGORY_CONFIG.custom;
   const dots = [1, 2, 3, 4, 5];
+  const isSitterNote = entry.category === 'sitter_note';
 
   return (
     <View style={styles.entryCard}>
@@ -43,13 +45,22 @@ function EntryCard({ entry }: { entry: DailyEntry }) {
           <Ionicons name={config.icon as any} size={18} color={config.color} />
         </View>
         <Text style={styles.entryLabel}>{entry.label || config.label}</Text>
-        <Text style={[styles.entryValue, { color: config.color }]}>{VALUE_LABELS[entry.value] || 'Normal'}</Text>
+        {!isSitterNote && (
+          <Text style={[styles.entryValue, { color: config.color }]}>{VALUE_LABELS[entry.value] || 'Normal'}</Text>
+        )}
       </View>
-      <View style={styles.dotsRow}>
-        {dots.map(d => (
-          <View key={d} style={[styles.dot, d <= entry.value && { backgroundColor: config.color }]} />
-        ))}
-      </View>
+      {!isSitterNote && (
+        <View style={styles.dotsRow}>
+          {dots.map(d => (
+            <View key={d} style={[styles.dot, d <= entry.value && { backgroundColor: config.color }]} />
+          ))}
+        </View>
+      )}
+      {isSitterNote && entry.sitterName ? (
+        <Text style={[styles.entryNote, { color: config.color, fontWeight: '600', marginTop: 4 }]}>
+          From: {entry.sitterName}
+        </Text>
+      ) : null}
       {entry.note ? <Text style={styles.entryNote}>{entry.note}</Text> : null}
     </View>
   );
