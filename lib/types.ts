@@ -45,12 +45,23 @@ export interface InAppNotification {
   id: string;
   petId: string;
   recordId: string;
-  type: 'follow_up_1_week' | 'follow_up_24_hours';
+  type: 'follow_up_1_week' | 'follow_up_24_hours' | 'sitter_note';
   title: string;
   body: string;
   createdAt: string;
   read: boolean;
   dismissed: boolean;
+  sitterName?: string;
+}
+
+export interface PendingSitterNote {
+  id: string;
+  noteId: string;
+  petId: string;
+  petName: string;
+  sitterName: string;
+  text: string;
+  createdAt: string;
 }
 
 export interface DailyLog {
@@ -61,10 +72,11 @@ export interface DailyLog {
 }
 
 export interface DailyEntry {
-  category: 'water' | 'food' | 'energy' | 'mood' | 'bathroom' | 'sleep' | 'custom';
+  category: 'water' | 'food' | 'energy' | 'mood' | 'bathroom' | 'sleep' | 'custom' | 'sitter_note';
   value: number;
   label: string;
   note?: string;
+  sitterName?: string;
 }
 
 export interface HealthTask {

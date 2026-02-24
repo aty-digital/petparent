@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult, SharedPet, SitterNote, InviteCode } from './types';
+import * as Notifications from 'expo-notifications';
+import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult, SharedPet, SitterNote, InviteCode, PendingSitterNote, InAppNotification } from './types';
 
 function secureKey(email: string): string {
   const sanitized = email.toLowerCase().trim().replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -84,6 +85,9 @@ interface PetContextValue {
   setSelectedSharedPetId: (id: string | null) => void;
   sitterNotes: SitterNote[];
   addSitterNote: (note: SitterNote) => Promise<void>;
+  pendingSitterNotes: PendingSitterNote[];
+  dismissPendingSitterNote: (id: string) => Promise<void>;
+  logPendingSitterNote: (pending: PendingSitterNote) => Promise<void>;
   clinicName: string;
   clinicAddress: string;
   setClinicInfo: (name: string, address: string) => Promise<void>;
@@ -139,6 +143,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveViewState] = useState<ActiveView>('parent');
   const [sharedPets, setSharedPets] = useState<SharedPet[]>([]);
   const [sitterNotes, setSitterNotes] = useState<SitterNote[]>([]);
+  const [pendingSitterNotes, setPendingSitterNotes] = useState<PendingSitterNote[]>([]);
   const [selectedSharedPetId, setSelectedSharedPetId] = useState<string | null>(null);
   const [clinicName, setClinicNameState] = useState('');
   const [clinicAddress, setClinicAddressState] = useState('');
@@ -164,6 +169,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     setActiveViewState('parent');
     setSharedPets([]);
     setSitterNotes([]);
+    setPendingSitterNotes([]);
     setClinicNameState('');
     setClinicAddressState('');
     setVetClients([]);
@@ -171,7 +177,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const loadUserData = useCallback(async (email: string) => {
     try {
-      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData, alsoPetParentData, activeViewData, sharedPetsData, sitterNotesData, clinicNameData, clinicAddressData, vetClientsData] = await Promise.all([
+      const [petsData, activeId, recordsData, logsData, tasksData, triageData, nameData, onboardingData, roleData, alsoPetParentData, activeViewData, sharedPetsData, sitterNotesData, clinicNameData, clinicAddressData, vetClientsData, pendingNotesData] = await Promise.all([
         AsyncStorage.getItem(userKey(email, 'pets')),
         AsyncStorage.getItem(userKey(email, 'active_pet')),
         AsyncStorage.getItem(userKey(email, 'records')),
@@ -188,6 +194,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(userKey(email, 'clinic_name')),
         AsyncStorage.getItem(userKey(email, 'clinic_address')),
         AsyncStorage.getItem(userKey(email, 'vet_clients')),
+        AsyncStorage.getItem(userKey(email, 'pending_sitter_notes')),
       ]);
 
       const loadedPets: Pet[] = petsData ? JSON.parse(petsData) : [];
@@ -211,6 +218,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
       if (activeViewData) setActiveViewState(activeViewData as ActiveView);
       setSharedPets(sharedPetsData ? JSON.parse(sharedPetsData) : []);
       setSitterNotes(sitterNotesData ? JSON.parse(sitterNotesData) : []);
+      setPendingSitterNotes(pendingNotesData ? JSON.parse(pendingNotesData) : []);
       if (clinicNameData) setClinicNameState(clinicNameData);
       if (clinicAddressData) setClinicAddressState(clinicAddressData);
       setVetClients(vetClientsData ? JSON.parse(vetClientsData) : []);
@@ -414,7 +422,109 @@ export function PetProvider({ children }: { children: ReactNode }) {
     if (userEmail) {
       await AsyncStorage.setItem(userKey(userEmail, 'sitter_notes'), JSON.stringify(updated));
     }
-  }, [sitterNotes, userEmail]);
+
+    const sharedPet = sharedPets.find(sp => sp.id === note.sharedPetId);
+    if (sharedPet?.ownerEmail) {
+      const parentEmail = sharedPet.ownerEmail;
+      const petName = sharedPet.pet.name || 'Unknown Pet';
+      try {
+        const pendingNote: PendingSitterNote = {
+          id: `psn_${note.id}`,
+          noteId: note.id,
+          petId: note.petId,
+          petName,
+          sitterName: note.sitterName,
+          text: note.text,
+          createdAt: note.createdAt,
+        };
+        const existingPendingData = await AsyncStorage.getItem(userKey(parentEmail, 'pending_sitter_notes'));
+        const existingPending: PendingSitterNote[] = existingPendingData ? JSON.parse(existingPendingData) : [];
+        const updatedPending = [pendingNote, ...existingPending];
+        await AsyncStorage.setItem(userKey(parentEmail, 'pending_sitter_notes'), JSON.stringify(updatedPending));
+
+        const notifKey = `@pawguard_user_${parentEmail.toLowerCase().trim()}_notifications`;
+        const existingNotifData = await AsyncStorage.getItem(notifKey);
+        const existingNotifs: InAppNotification[] = existingNotifData ? JSON.parse(existingNotifData) : [];
+        const newNotif: InAppNotification = {
+          id: `sitter_note_${note.id}`,
+          petId: note.petId,
+          recordId: '',
+          type: 'sitter_note',
+          title: `${note.sitterName} left a note about ${petName}`,
+          body: note.text.length > 100 ? note.text.substring(0, 100) + '...' : note.text,
+          createdAt: note.createdAt,
+          read: false,
+          dismissed: false,
+          sitterName: note.sitterName,
+        };
+        await AsyncStorage.setItem(notifKey, JSON.stringify([newNotif, ...existingNotifs]));
+
+        if (Platform.OS !== 'web') {
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: `Sitter Note: ${petName}`,
+                body: `${note.sitterName}: ${note.text.length > 80 ? note.text.substring(0, 80) + '...' : note.text}`,
+                data: { type: 'sitter_note', petId: note.petId },
+              },
+              trigger: null,
+            });
+          } catch (e) {
+            console.warn('Could not schedule push notification:', e);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to deliver note to pet parent:', e);
+      }
+    }
+  }, [sitterNotes, userEmail, sharedPets]);
+
+  const dismissPendingSitterNote = useCallback(async (id: string) => {
+    const updated = pendingSitterNotes.filter(n => n.id !== id);
+    setPendingSitterNotes(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'pending_sitter_notes'), JSON.stringify(updated));
+    }
+  }, [pendingSitterNotes, userEmail]);
+
+  const logPendingSitterNote = useCallback(async (pending: PendingSitterNote) => {
+    const today = new Date().toISOString().split('T')[0];
+    const existingLog = dailyLogs.find(l => l.petId === pending.petId && l.date === today);
+    const newEntry: DailyEntry = {
+      category: 'sitter_note',
+      value: 3,
+      label: 'Sitter Note',
+      note: pending.text,
+      sitterName: pending.sitterName,
+    };
+
+    if (existingLog) {
+      const updatedLog = { ...existingLog, entries: [...existingLog.entries, newEntry] };
+      const updatedLogs = dailyLogs.map(l => l.id === existingLog.id ? updatedLog : l);
+      setDailyLogs(updatedLogs);
+      if (userEmail) {
+        await AsyncStorage.setItem(userKey(userEmail, 'daily_logs'), JSON.stringify(updatedLogs));
+      }
+    } else {
+      const newLog: DailyLog = {
+        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        petId: pending.petId,
+        date: today,
+        entries: [newEntry],
+      };
+      const updatedLogs = [newLog, ...dailyLogs];
+      setDailyLogs(updatedLogs);
+      if (userEmail) {
+        await AsyncStorage.setItem(userKey(userEmail, 'daily_logs'), JSON.stringify(updatedLogs));
+      }
+    }
+
+    const updated = pendingSitterNotes.filter(n => n.id !== pending.id);
+    setPendingSitterNotes(updated);
+    if (userEmail) {
+      await AsyncStorage.setItem(userKey(userEmail, 'pending_sitter_notes'), JSON.stringify(updated));
+    }
+  }, [pendingSitterNotes, dailyLogs, userEmail]);
 
   const setClinicInfo = useCallback(async (name: string, address: string) => {
     setClinicNameState(name);
@@ -565,7 +675,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     const existingNew = accounts.find(a => a.email === normalizedNew);
     if (existingNew) return;
 
-    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes'];
+    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes', 'pending_sitter_notes'];
     for (const suffix of suffixes) {
       const val = await AsyncStorage.getItem(userKey(oldEmail, suffix));
       if (val !== null) {
@@ -616,7 +726,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     if (!userEmail) return;
     const normalizedEmail = userEmail.toLowerCase().trim();
 
-    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes'];
+    const suffixes = ['pets', 'active_pet', 'records', 'daily_logs', 'tasks', 'triage', 'name', 'onboarding_complete', 'role', 'password', 'subscription_tier', 'triage_usage', 'paywall_complete', 'also_pet_parent', 'active_view', 'shared_pets', 'sitter_notes', 'pending_sitter_notes'];
     const keysToRemove = suffixes.map(s => userKey(normalizedEmail, s));
     await AsyncStorage.multiRemove(keysToRemove);
     await deleteSecurePassword(normalizedEmail);
@@ -642,6 +752,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     sharedPets, addSharedPet, removeSharedPet,
     selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
+    pendingSitterNotes, dismissPendingSitterNote, logPendingSitterNote,
     clinicName, clinicAddress, setClinicInfo,
     vetClients, addVetClient, removeVetClient,
     selectedVetClientId, setSelectedVetClientId,
@@ -659,6 +770,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
     sharedPets, addSharedPet, removeSharedPet,
     selectedSharedPetId, setSelectedSharedPetId,
     sitterNotes, addSitterNote,
+    pendingSitterNotes, dismissPendingSitterNote, logPendingSitterNote,
     clinicName, clinicAddress, setClinicInfo,
     vetClients, addVetClient, removeVetClient,
     selectedVetClientId, setSelectedVetClientId,
