@@ -196,39 +196,44 @@ export default function HomeScreen() {
   if (!activePet) {
     return (
       <View style={styles.container}>
-        <View style={styles.emptyState}>
-          <BrandLogo size="medium" showText={true} showSubtitle={false} />
-          <Text style={styles.emptyTitle}>Welcome!</Text>
-          <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI symptom triage, and more.</Text>
-          <Pressable
-            style={styles.addPetButton}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.push('/add-pet');
-            }}
-          >
-            <LinearGradient
-              colors={[C.accent, C.accentDim]}
-              style={styles.addPetGradient}
-            >
-              <Ionicons name="add" size={20} color={C.background} />
-              <Text style={styles.addPetText}>Add Your Pet</Text>
-            </LinearGradient>
-          </Pressable>
-          {userRole === 'sitter' && activeView === 'parent' && (
+        <ScrollView
+          contentContainerStyle={styles.emptyStateScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.emptyState}>
+            <BrandLogo size="medium" showText={true} showSubtitle={false} />
+            <Text style={styles.emptyTitle}>Welcome!</Text>
+            <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI symptom triage, and more.</Text>
             <Pressable
-              style={styles.switchBackButton}
+              style={styles.addPetButton}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setActiveView('sitter');
+                router.push('/add-pet');
               }}
-              testID="switch-back-sitter"
             >
-              <Ionicons name="swap-horizontal" size={18} color={C.accent} />
-              <Text style={styles.switchBackText}>Switch to Sitter View</Text>
+              <LinearGradient
+                colors={[C.accent, C.accentDim]}
+                style={styles.addPetGradient}
+              >
+                <Ionicons name="add" size={20} color={C.background} />
+                <Text style={styles.addPetText}>Add Your Pet</Text>
+              </LinearGradient>
             </Pressable>
-          )}
-        </View>
+            {userRole === 'sitter' && activeView === 'parent' && (
+              <Pressable
+                style={styles.switchBackButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setActiveView('sitter');
+                }}
+                testID="switch-back-sitter"
+              >
+                <Ionicons name="swap-horizontal" size={18} color={C.accent} />
+                <Text style={styles.switchBackText}>Switch to Sitter View</Text>
+              </Pressable>
+            )}
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -379,7 +384,8 @@ const styles = StyleSheet.create({
   dailyTrackerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dailyTrackerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.text },
   dailyTrackerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.textSecondary },
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 100 },
+  emptyStateScroll: { flexGrow: 1, justifyContent: 'center', paddingBottom: 120 },
+  emptyState: { alignItems: 'center', paddingHorizontal: 40, paddingVertical: 40 },
   emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   emptyTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: C.text, marginBottom: 12 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: C.textSecondary, textAlign: 'center', lineHeight: 22 },
