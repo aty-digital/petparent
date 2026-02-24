@@ -12,21 +12,23 @@ import type { InAppNotification } from '@/lib/types';
 
 const C = Colors.dark;
 
+function getNotifStyle(type: string) {
+  if (type === 'sitter_note') return { bg: 'rgba(124,58,237,0.12)', color: '#7C3AED', icon: 'chatbox-ellipses-outline' as const };
+  if (type === 'follow_up_1_week') return { bg: 'rgba(79, 195, 247, 0.12)', color: '#4FC3F7', icon: 'calendar-outline' as const };
+  return { bg: 'rgba(255, 183, 77, 0.12)', color: '#FFB74D', icon: 'alarm-outline' as const };
+}
+
 function NotificationItem({ item, onPress }: { item: InAppNotification; onPress: () => void }) {
-  const isWeek = item.type === 'follow_up_1_week';
   const timeAgo = getTimeAgo(item.createdAt);
+  const ns = getNotifStyle(item.type);
 
   return (
     <Pressable
       style={[styles.notifItem, !item.read && styles.notifItemUnread]}
       onPress={onPress}
     >
-      <View style={[styles.notifIcon, { backgroundColor: isWeek ? 'rgba(79, 195, 247, 0.12)' : 'rgba(255, 183, 77, 0.12)' }]}>
-        <Ionicons
-          name={isWeek ? 'calendar-outline' : 'alarm-outline'}
-          size={20}
-          color={isWeek ? '#4FC3F7' : '#FFB74D'}
-        />
+      <View style={[styles.notifIcon, { backgroundColor: ns.bg }]}>
+        <Ionicons name={ns.icon} size={20} color={ns.color} />
       </View>
       <View style={styles.notifContent}>
         <Text style={[styles.notifTitle, !item.read && styles.notifTitleUnread]}>{item.title}</Text>
