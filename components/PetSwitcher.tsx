@@ -16,8 +16,6 @@ export default function PetSwitcher() {
   const { unreadCount } = useNotifications();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
 
-  if (pets.length === 0) return null;
-
   return (
     <View style={[styles.wrapper, { paddingTop: topInset + 8 }]}>
       <View style={styles.ownerRow}>
@@ -63,7 +61,7 @@ export default function PetSwitcher() {
           </Pressable>
         </View>
       </View>
-      <ScrollView
+      {pets.length > 0 && (<ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chipsRow}
@@ -105,7 +103,7 @@ export default function PetSwitcher() {
         >
           <Ionicons name="add" size={16} color={C.accent} />
         </Pressable>
-      </ScrollView>
+      </ScrollView>)}
     </View>
   );
 }
