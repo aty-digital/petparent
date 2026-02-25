@@ -36,8 +36,9 @@ export default function TriageScreen() {
   const { canUseTriageThisMonth, triageUsedThisMonth, maxFreeTriagePerMonth, tier, recordTriageUsage, monthlyPackage, annualPackage, purchasePackage, restorePurchases } = useSubscription();
 
   const isSitter = userRole === 'sitter';
-  const selectedSharedPet = isSitter && selectedSharedPetId
-    ? sharedPets.find(sp => sp.id === selectedSharedPetId)
+  const [sitterSelectedPetId, setSitterSelectedPetId] = useState<string | null>(selectedSharedPetId);
+  const selectedSharedPet = isSitter && sitterSelectedPetId
+    ? sharedPets.find(sp => sp.id === sitterSelectedPetId)
     : null;
   const triagePet = isSitter ? selectedSharedPet?.pet ?? null : activePet;
 
@@ -238,7 +239,86 @@ export default function TriageScreen() {
             <View style={{ width: 40 }} />
           </View>
 
-          {triagePet && (
+          {isSitter ? (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.textSecondary, marginBottom: 8 }}>Select Pet</Text>
+              {sharedPets.length === 0 ? (
+                <View style={{ backgroundColor: C.dangerSoft, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Ionicons name="alert-circle" size={20} color={C.danger} />
+                  <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.danger, flex: 1 }}>
+                    No pets shared with you. Accept an invite code first.
+                  </Text>
+                </View>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                  {sharedPets.map(sp => {
+                    const isActive = sitterSelectedPetId === sp.id;
+                    return (
+                      <Pressable
+                        key={sp.id}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setSitterSelectedPetId(isActive ? null : sp.id);
+                        }}
+                        style={{
+                          backgroundColor: isActive ? C.accent : C.card,
+                          borderRadius: 14,
+                          padding: 12,
+                          paddingHorizontal: 16,
+                          borderWidth: 1.5,
+                          borderColor: isActive ? C.accent : C.cardBorder,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 10,
+                          minWidth: 140,
+                        }}
+                      >
+                        <View style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
+                          backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : C.accentSoft,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          <Ionicons name="paw" size={16} color={isActive ? '#FFFFFF' : C.accent} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            fontFamily: 'Inter_600SemiBold',
+                            fontSize: 14,
+                            color: isActive ? '#FFFFFF' : C.text,
+                          }}>{sp.pet.name}</Text>
+                          <Text style={{
+                            fontFamily: 'Inter_400Regular',
+                            fontSize: 11,
+                            color: isActive ? 'rgba(255,255,255,0.7)' : C.textMuted,
+                          }}>{sp.ownerName}</Text>
+                        </View>
+                        {isActive && (
+                          <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              {triagePet && selectedSharedPet && (
+                <View style={[styles.petBadge, { marginTop: 12 }]}>
+                  <View style={styles.petBadgeAvatar}>
+                    <Ionicons name="paw" size={16} color={C.accent} />
+                  </View>
+                  <View>
+                    <Text style={styles.petBadgeName}>{triagePet.name}</Text>
+                    <Text style={styles.petBadgeBreed}>{triagePet.breed} {'\u00B7'} {getAge(triagePet.birthDate)} {'\u00B7'} {triagePet.weight} {triagePet.weightUnit}</Text>
+                  </View>
+                  <View style={{ marginLeft: 'auto', backgroundColor: C.accentSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                    <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 11, color: C.accent }}>via {selectedSharedPet.ownerName}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          ) : triagePet ? (
             <View style={styles.petBadge}>
               <View style={styles.petBadgeAvatar}>
                 <Ionicons name="paw" size={16} color={C.accent} />
@@ -247,29 +327,8 @@ export default function TriageScreen() {
                 <Text style={styles.petBadgeName}>{triagePet.name}</Text>
                 <Text style={styles.petBadgeBreed}>{triagePet.breed} {'\u00B7'} {getAge(triagePet.birthDate)}</Text>
               </View>
-              {isSitter && selectedSharedPet && (
-                <View style={{ marginLeft: 'auto', backgroundColor: C.accentSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
-                  <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 11, color: C.accent }}>via {selectedSharedPet.ownerName}</Text>
-                </View>
-              )}
             </View>
-          )}
-          {isSitter && !triagePet && (
-            <View style={{
-              backgroundColor: C.dangerSoft,
-              borderRadius: 12,
-              padding: 14,
-              marginBottom: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-            }}>
-              <Ionicons name="alert-circle" size={20} color={C.danger} />
-              <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: C.danger, flex: 1 }}>
-                Select a pet from your home screen first to run a triage session.
-              </Text>
-            </View>
-          )}
+          ) : null}
 
           {tier === 'free' && (
             <View style={{
