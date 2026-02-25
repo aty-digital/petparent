@@ -582,7 +582,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
       if (new Date(invite.expiresAt) < new Date()) {
         return { success: false, error: 'This invite code has expired. Ask the pet parent for a new one.' };
       }
-      const alreadyShared = sharedPets.find(s => s.pet.id === invite.petId);
+      const isVet = activeView === 'vet' || userRole === 'vet';
+      const existingList = isVet ? vetClients : sharedPets;
+      const alreadyShared = existingList.find(s => s.pet.id === invite.petId);
       if (alreadyShared) {
         return { success: false, error: 'This pet is already shared with you.' };
       }
@@ -600,12 +602,16 @@ export function PetProvider({ children }: { children: ReactNode }) {
         sharedAt: new Date().toISOString(),
         inviteCode: code.toUpperCase(),
       };
-      await addSharedPet(shared);
+      if (isVet) {
+        await addVetClient(shared);
+      } else {
+        await addSharedPet(shared);
+      }
       return { success: true };
     } catch (e) {
       return { success: false, error: 'Something went wrong. Please try again.' };
     }
-  }, [sharedPets, addSharedPet]);
+  }, [sharedPets, addSharedPet, vetClients, addVetClient, activeView, userRole]);
 
   const signup = useCallback(async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const normalizedEmail = email.toLowerCase().trim();
