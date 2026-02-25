@@ -878,69 +878,79 @@ export default function OnboardingScreen() {
     </View>
   );
 
+  const vetClinicValid = vetClinicName.trim().length > 0;
+
   const renderVetClinic = () => (
-    <View style={[styles.centeredContainer, { paddingTop: topInset + 40 }]}>
-      <View style={styles.formHeader}>
-        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
-          <MaterialCommunityIcons name="hospital-building" size={32} color={C.accent} />
-        </View>
-        <Text style={styles.stepTitle}>Your Clinic Info</Text>
-        <Text style={styles.stepSubtitle}>
-          Tell us about your veterinary practice
-        </Text>
-      </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={[styles.formContainer, { paddingTop: topInset + 20, paddingBottom: bottomInset + 20 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <Pressable onPress={() => animateTransition('role')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={22} color={C.text} />
+        </Pressable>
 
-      <View style={{ gap: 16, marginTop: 24 }}>
-        <View>
-          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: C.textMuted, letterSpacing: 1.2, marginBottom: 8 }}>CLINIC NAME</Text>
-          <TextInput
-            style={styles.input}
-            value={vetClinicName}
-            onChangeText={setVetClinicName}
-            placeholder="e.g. Happy Paws Veterinary"
-            placeholderTextColor={C.textMuted}
-            autoCapitalize="words"
-          />
+        <View style={styles.formHeader}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
+            <MaterialCommunityIcons name="hospital-building" size={32} color={C.accent} />
+          </View>
+          <Text style={styles.stepTitle}>Your Clinic Info</Text>
+          <Text style={styles.stepSubtitle}>Tell us about your veterinary practice</Text>
         </View>
-        <View>
-          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: C.textMuted, letterSpacing: 1.2, marginBottom: 8 }}>CLINIC ADDRESS</Text>
-          <TextInput
-            style={styles.input}
-            value={vetClinicAddress}
-            onChangeText={setVetClinicAddress}
-            placeholder="e.g. 123 Main St, Anytown"
-            placeholderTextColor={C.textMuted}
-            autoCapitalize="words"
-          />
-        </View>
-      </View>
 
-      <View style={{ position: 'absolute', bottom: bottomInset + 24, left: 24, right: 24 }}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Clinic Name *</Text>
+          <View style={styles.inputWrapper}>
+            <MaterialCommunityIcons name="hospital-building" size={20} color={C.textMuted} style={styles.inputIcon} />
+            <TextInput
+              style={styles.textInput}
+              value={vetClinicName}
+              onChangeText={setVetClinicName}
+              placeholder="e.g. Happy Paws Veterinary"
+              placeholderTextColor={C.textMuted}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Clinic Address</Text>
+          <View style={styles.inputWrapper}>
+            <MaterialCommunityIcons name="map-marker-outline" size={20} color={C.textMuted} style={styles.inputIcon} />
+            <TextInput
+              style={styles.textInput}
+              value={vetClinicAddress}
+              onChangeText={setVetClinicAddress}
+              placeholder="e.g. 123 Main St, Anytown"
+              placeholderTextColor={C.textMuted}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
         <Pressable
           onPress={async () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            if (vetClinicName.trim() || vetClinicAddress.trim()) {
-              await setClinicInfo(vetClinicName.trim(), vetClinicAddress.trim());
-            }
+            await setClinicInfo(vetClinicName.trim(), vetClinicAddress.trim());
             animateTransition('paywall');
           }}
-          style={[styles.submitBtn, { opacity: 1 }]}
+          disabled={!vetClinicValid}
           testID="vet-clinic-continue"
         >
-          <LinearGradient colors={[C.gradient.start, C.gradient.end]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitBtnGradient}>
-            <Text style={styles.submitBtnText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+          <LinearGradient
+            colors={vetClinicValid ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+            style={styles.submitBtn}
+          >
+            <Text style={[styles.submitBtnText, !vetClinicValid && { color: C.textMuted }]}>Continue</Text>
+            <Ionicons name="arrow-forward" size={18} color={vetClinicValid ? '#FFFFFF' : C.textMuted} />
           </LinearGradient>
         </Pressable>
 
         <Pressable
           onPress={() => { animateTransition('paywall'); }}
-          style={{ alignSelf: 'center', marginTop: 12 }}
+          style={{ alignSelf: 'center', marginTop: 16 }}
         >
           <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 14, color: C.textMuted }}>Skip for now</Text>
         </Pressable>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 
   const renderPetCount = () => (
