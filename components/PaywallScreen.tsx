@@ -66,7 +66,7 @@ const VET_PREMIUM_FEATURES = [
 ];
 
 const PRICING = {
-  parent: { monthly: '$5.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
+  parent: { monthly: '$4.99', annual: '$49.99', monthlyEquiv: '$4.17', save: '~30%' },
   sitter: { monthly: '$6.99', annual: '$69.99', monthlyEquiv: '$5.83', save: '~30%' },
   vet: { monthly: '$25.99', annual: '$259.99', monthlyEquiv: '$21.67', save: '~17%' },
 };
