@@ -22,6 +22,7 @@ interface SubscriptionContextValue {
   recordTriageUsage: () => Promise<void>;
   setPaywallComplete: () => Promise<void>;
   paywallComplete: boolean;
+  isStoreAvailable: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
@@ -34,8 +35,8 @@ function subKey(email: string, suffix: string): string {
 const MAX_FREE_PETS = 1;
 const MAX_FREE_TRIAGE_PER_MONTH = 3;
 
-const REVENUECAT_API_KEY_IOS = 'appl_PLACEHOLDER_KEY';
-const REVENUECAT_API_KEY_ANDROID = 'goog_PLACEHOLDER_KEY';
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
 
 const ENTITLEMENT_ID = 'premium';
 
@@ -107,25 +108,29 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
 
       if (Platform.OS !== 'web') {
-        try {
-          const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
-          Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-          await Purchases.configure({ apiKey });
-          setRcInitialized(true);
-
-          const customerInfo = await Purchases.getCustomerInfo();
-          checkEntitlements(customerInfo);
-
+        const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
+        if (apiKey) {
           try {
-            const offerings = await Purchases.getOfferings();
-            if (offerings.current && offerings.current.availablePackages) {
-              setPackages(offerings.current.availablePackages);
+            Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+            await Purchases.configure({ apiKey });
+            setRcInitialized(true);
+
+            const customerInfo = await Purchases.getCustomerInfo();
+            checkEntitlements(customerInfo);
+
+            try {
+              const offerings = await Purchases.getOfferings();
+              if (offerings.current && offerings.current.availablePackages) {
+                setPackages(offerings.current.availablePackages);
+              }
+            } catch (offerErr) {
+              console.log('RevenueCat offerings not available (expected in dev):', offerErr);
             }
-          } catch (offerErr) {
-            console.log('RevenueCat offerings not available (expected in dev):', offerErr);
+          } catch (rcErr) {
+            console.log('RevenueCat not available (expected in Expo Go/dev):', rcErr);
           }
-        } catch (rcErr) {
-          console.log('RevenueCat not available (expected in Expo Go/dev):', rcErr);
+        } else {
+          console.log('RevenueCat API key not configured, skipping SDK initialization');
         }
       }
     } catch (e) {
@@ -146,11 +151,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
     if (!rcInitialized) {
-      setTier('premium');
-      if (userEmail) {
-        await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
-      }
-      return true;
+      console.warn('RevenueCat not initialized — purchase unavailable');
+      throw new Error('Purchases are not available right now. Please try again later.');
     }
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
@@ -236,6 +238,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     packages.find(p => p.packageType === 'ANNUAL') || null,
   [packages]);
 
+  const isStoreAvailable = rcInitialized;
+
   const value = useMemo(() => ({
     tier,
     isLoading,
@@ -252,9 +256,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     recordTriageUsage,
     setPaywallComplete,
     paywallComplete,
+    isStoreAvailable,
   }), [tier, isLoading, packages, monthlyPackage, annualPackage,
     purchasePackage, restorePurchases, canAddMorePets, canUseTriageThisMonth,
-    triageUsedThisMonth, recordTriageUsage, setPaywallComplete, paywallComplete]);
+    triageUsedThisMonth, recordTriageUsage, setPaywallComplete, paywallComplete,
+    isStoreAvailable]);
 
   return (
     <SubscriptionContext.Provider value={value}>

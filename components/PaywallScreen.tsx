@@ -75,7 +75,7 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const { purchasePackage, monthlyPackage, annualPackage, setPaywallComplete, restorePurchases } = useSubscription();
+  const { purchasePackage, monthlyPackage, annualPackage, setPaywallComplete, restorePurchases, isStoreAvailable } = useSubscription();
   const { userRole } = usePets();
 
   const roleKey = userRole === 'sitter' ? 'sitter' : userRole === 'vet' ? 'vet' : 'parent';
@@ -140,6 +140,10 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
 
   const handleRestore = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isStoreAvailable) {
+      Alert.alert('Unavailable', 'Restore purchases is not available in this environment. Please try on a physical device.');
+      return;
+    }
     setPurchasing(true);
     try {
       const success = await restorePurchases();

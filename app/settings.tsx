@@ -30,7 +30,7 @@ export default function SettingsScreen() {
     isAlsoPetParent, setIsAlsoPetParent, activeView, setActiveView,
     sharedPets, clinicName, clinicAddress, vetClients,
   } = usePets();
-  const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases } = useSubscription();
+  const { tier, triageUsedThisMonth, maxFreeTriagePerMonth, restorePurchases, isStoreAvailable } = useSubscription();
 
   const [showPaywall, setShowPaywall] = useState(false);
 
@@ -508,6 +508,10 @@ export default function SettingsScreen() {
                 style={styles.row}
                 onPress={async () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (!isStoreAvailable) {
+                    Alert.alert('Unavailable', 'Restore purchases is not available in this environment. Please try on a physical device.');
+                    return;
+                  }
                   const success = await restorePurchases();
                   if (success) {
                     Alert.alert('Restored', 'Your premium subscription has been restored.');
