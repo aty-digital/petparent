@@ -55,6 +55,13 @@ Pre-built integration modules that provide:
 - **Image**: Image generation via OpenAI's gpt-image-1
 - **Batch**: Generic batch processing utility with rate limiting and retries
 
+### Landing Page & Legal Pages
+- **Landing Page** (`server/templates/landing-page.html`): Marketing landing page for PetParent served at `/` on port 5000. Features hero section, feature cards (AI Triage, Tracker, Records, Collaboration), benefits section, App Store placeholder, and developer preview with QR code. Target custom domain: `pet-parent.app`. Uses Inter font, green (#2D6A4F) accent, warm (#FAF8F0) background. Includes dark mode support and responsive design.
+- **Privacy Policy** (`server/templates/privacy-policy.html`): Served at `/privacy-policy`. Covers data collection, usage, security, and user rights.
+- **Terms of Service** (`server/templates/terms-of-service.html`): Served at `/terms-of-service`. Covers acceptable use, AI triage disclaimers, intellectual property, and liability.
+- **Footer**: All pages include "Powered by ATY Digital" linking to `https://www.atydigital.com/about`.
+- **Routes**: Defined in `server/index.ts` within `configureExpoAndLanding()`.
+
 ### Build & Deploy
 - **Dev**: Two processes — `expo:dev` for Metro bundler, `server:dev` for Express API
 - **Production Build**: `scripts/build.js` handles Expo static web build, `server:build` bundles server with esbuild
