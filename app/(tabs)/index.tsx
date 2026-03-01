@@ -18,7 +18,13 @@ const C = Colors.dark;
 function PetCard({ pet }: { pet: any }) {
   const age = getAge(pet.birthDate);
   return (
-    <View style={styles.petCard}>
+    <Pressable
+      style={styles.petCard}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/(tabs)/profile');
+      }}
+    >
       <View style={styles.petCardInner}>
         {pet.photoUri ? (
           <Image source={{ uri: pet.photoUri }} style={styles.petAvatarImage} />
@@ -34,8 +40,9 @@ function PetCard({ pet }: { pet: any }) {
             <Text style={styles.healthBadgeText}>HEALTHY</Text>
           </View>
         </View>
+        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
