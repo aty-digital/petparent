@@ -30,6 +30,8 @@ export interface MedicalRecord {
   status?: string;
   expiresDate?: string;
   currentlyTaking?: boolean;
+  noLongerTaking?: boolean;
+  stoppedDate?: string;
   frequency?: MedicationFrequency;
   reminderTimes?: string[];
   remindersEnabled?: boolean;

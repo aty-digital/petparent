@@ -89,6 +89,11 @@ function RecordItem({ record, onDelete }: { record: MedicalRecord; onDelete: () 
       <View style={styles.recordInfo}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={styles.recordTitle}>{record.title}</Text>
+          {record.noLongerTaking && (
+            <View style={{ backgroundColor: `${C.textMuted}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+              <Text style={{ fontSize: 10, color: C.textMuted, fontWeight: '600' }}>Stopped</Text>
+            </View>
+          )}
           {record.remindersEnabled && record.notificationIds && record.notificationIds.length > 0 && (
             <Ionicons name="notifications" size={12} color={C.accent} />
           )}

@@ -81,6 +81,8 @@ export default function EditRecordScreen() {
   const [expiresDate, setExpiresDate] = useState(existingRecord?.expiresDate ?? '');
 
   const [currentlyTaking, setCurrentlyTaking] = useState(existingRecord?.currentlyTaking ?? false);
+  const [noLongerTaking, setNoLongerTaking] = useState(existingRecord?.noLongerTaking ?? false);
+  const [stoppedDate, setStoppedDate] = useState(existingRecord?.stoppedDate ?? new Date().toISOString().split('T')[0]);
   const [frequency, setFrequency] = useState<MedicationFrequency>(existingRecord?.frequency ?? 'once_daily');
   const [timeDisplays, setTimeDisplays] = useState<{ hour: string; minute: string; period: 'AM' | 'PM' }[]>(
     (existingRecord?.reminderTimes ?? ['09:00']).map(t => to12Hour(t))
@@ -98,6 +100,7 @@ export default function EditRecordScreen() {
   );
   const [followUpRemindersEnabled, setFollowUpRemindersEnabled] = useState(existingRecord?.followUpRemindersEnabled ?? false);
 
+  const isMedication = type === 'medication';
   const supportsReminders = type === 'medication' || type === 'flea_treatment' || type === 'vaccination';
   const isVetVisit = type === 'vet_visit';
   const isValid = title.trim() && date;
@@ -247,6 +250,8 @@ export default function EditRecordScreen() {
       clinic: clinic.trim() || undefined,
       expiresDate: expiresDate || undefined,
       currentlyTaking: supportsReminders ? currentlyTaking : undefined,
+      noLongerTaking: isMedication ? noLongerTaking : undefined,
+      stoppedDate: isMedication && noLongerTaking ? stoppedDate : undefined,
       frequency: supportsReminders && currentlyTaking ? frequency : undefined,
       reminderTimes: supportsReminders && currentlyTaking ? reminderTimes24 : undefined,
       remindersEnabled: supportsReminders && currentlyTaking ? remindersEnabled : undefined,
@@ -440,7 +445,11 @@ export default function EditRecordScreen() {
                     style={styles.checkboxRow}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      setCurrentlyTaking(!currentlyTaking);
+                      const next = !currentlyTaking;
+                      setCurrentlyTaking(next);
+                      if (next && noLongerTaking) {
+                        setNoLongerTaking(false);
+                      }
                     }}
                   >
                     <View style={[styles.checkbox, currentlyTaking && styles.checkboxChecked]}>
@@ -455,6 +464,37 @@ export default function EditRecordScreen() {
                       </Text>
                     </View>
                   </Pressable>
+
+                  {isMedication && (
+                    <Pressable
+                      style={styles.checkboxRow}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        const next = !noLongerTaking;
+                        setNoLongerTaking(next);
+                        if (next) {
+                          setCurrentlyTaking(false);
+                          setRemindersEnabled(false);
+                          setStoppedDate(new Date().toISOString().split('T')[0]);
+                        }
+                      }}
+                    >
+                      <View style={[styles.checkbox, noLongerTaking && styles.checkboxChecked]}>
+                        {noLongerTaking && <Ionicons name="checkmark" size={14} color={C.background} />}
+                      </View>
+                      <View style={styles.checkboxTextWrap}>
+                        <Text style={styles.checkboxLabel}>No Longer Taking</Text>
+                        <Text style={styles.checkboxSub}>This medication has been discontinued</Text>
+                      </View>
+                    </Pressable>
+                  )}
+
+                  {noLongerTaking && isMedication && (
+                    <View style={styles.medSection}>
+                      <Text style={styles.label}>Date Stopped</Text>
+                      <TextInput style={styles.input} value={stoppedDate} onChangeText={setStoppedDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.textMuted} />
+                    </View>
+                  )}
 
                   {currentlyTaking && (
                     <View style={styles.medSection}>

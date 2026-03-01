@@ -174,7 +174,7 @@ export default function HomeScreen() {
   }
 
   const activeMeds = records.filter(
-    r => r.petId === activePet?.id && r.type === 'medication' && r.currentlyTaking
+    r => r.petId === activePet?.id && r.type === 'medication' && r.currentlyTaking && !r.noLongerTaking
   );
 
   const petTasks = tasks

@@ -7,7 +7,7 @@ PetParent (AI Vet Assistant & Pet Health Log) is a pet health management mobile 
 Key features:
 - **Onboarding Flow**: Multi-step guided onboarding with sign-up/login, role selection (Pet Parent/Sitter/Vet), pet count picker, and multi-pet profile creation loop. Sitters get a follow-up step asking if they're also a Pet Parent (dual-role support). Gates main app until completed.
 - **Pet Profiles**: Add/edit multiple pets with breed, species, weight, vet info
-- **Medical Records**: Track vet visits, vaccinations, and medications with optional medication reminders
+- **Medical Records**: Track vet visits, vaccinations, and medications with optional medication reminders. Medications support a "No Longer Taking" status (with stopped date) that is mutually exclusive with "Currently Taking" — discontinued meds show a "Stopped" badge in records and are excluded from Active Medications on the dashboard.
 - **Daily Wellness Tracker**: Log daily metrics (water, food, energy, mood, bathroom, sleep) on a 1-5 scale
 - **Health Tasks**: Schedule medication, vaccination, supplement, and checkup tasks
 - **AI Symptom Triage**: Submit symptoms and get AI-powered urgency assessment via OpenAI
