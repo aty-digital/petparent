@@ -109,7 +109,7 @@ function TaskItem({ task, onToggle }: { task: any; onToggle: () => void }) {
       style={styles.taskItem}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onToggle();
+        router.push('/(tabs)/records');
       }}
     >
       <View style={[styles.taskIcon, { backgroundColor: `${getColor()}18` }]}>
@@ -119,15 +119,19 @@ function TaskItem({ task, onToggle }: { task: any; onToggle: () => void }) {
         <Text style={[styles.taskTitle, task.completed && styles.taskCompleted]}>{task.title}</Text>
         <Text style={styles.taskDue}>{dueText}</Text>
       </View>
-      <Pressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onToggle();
-        }}
-        style={[styles.taskCheck, task.completed && styles.taskCheckDone]}
-      >
-        {task.completed && <Ionicons name="checkmark" size={14} color={C.background} />}
-      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onToggle();
+          }}
+          style={[styles.taskCheck, task.completed && styles.taskCheckDone]}
+        >
+          {task.completed && <Ionicons name="checkmark" size={14} color={C.background} />}
+        </Pressable>
+        <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
+      </View>
     </Pressable>
   );
 }
@@ -141,7 +145,13 @@ function ActiveMedCard({ record }: { record: any }) {
   const timesLabel = record.reminderTimes?.length ? record.reminderTimes.join(', ') : '';
 
   return (
-    <View style={styles.activeMedCard}>
+    <Pressable
+      style={styles.activeMedCard}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push({ pathname: '/edit-record', params: { recordId: record.id } });
+      }}
+    >
       <View style={styles.activeMedIcon}>
         <Ionicons name="medical" size={16} color="#D4A574" />
       </View>
@@ -156,7 +166,8 @@ function ActiveMedCard({ record }: { record: any }) {
           <Ionicons name="notifications" size={14} color={C.accent} />
         </View>
       )}
-    </View>
+      <Ionicons name="chevron-forward" size={14} color={C.textMuted} style={{ marginLeft: 4 }} />
+    </Pressable>
   );
 }
 
