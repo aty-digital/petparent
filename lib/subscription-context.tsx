@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
 import { usePets, type UserRole } from './pet-context';
+import { apiRequest } from './query-client';
 
 export type SubscriptionTier = 'free' | 'premium';
 
@@ -85,6 +86,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setTier('premium');
       } else {
         setTier('free');
+        try {
+          const res = await apiRequest('GET', `/api/users/${encodeURIComponent(userEmail)}/subscription`);
+          const data = await res.json();
+          if (data.subscriptionTier === 'premium') {
+            setTier('premium');
+            await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+          }
+        } catch (backendErr) {
+          console.log('Backend tier check failed (non-blocking):', backendErr);
+        }
       }
 
       if (savedPaywall === 'true') {
@@ -140,11 +151,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const syncTierToBackend = async (email: string, newTier: SubscriptionTier) => {
+    try {
+      await apiRequest('PATCH', `/api/users/${encodeURIComponent(email)}/subscription`, { tier: newTier });
+    } catch (e) {
+      console.log('Failed to sync tier to backend (non-blocking):', e);
+    }
+  };
+
   const checkEntitlements = (customerInfo: CustomerInfo) => {
     if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
       setTier('premium');
       if (userEmail) {
         AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+        syncTierToBackend(userEmail, 'premium');
       }
     }
   };
@@ -160,6 +180,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setTier('premium');
         if (userEmail) {
           await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+          await syncTierToBackend(userEmail, 'premium');
         }
         return true;
       }
@@ -179,6 +200,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setTier('premium');
         if (userEmail) {
           await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
+          await syncTierToBackend(userEmail, 'premium');
         }
         return true;
       }

@@ -8,6 +8,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateSubscriptionTier(username: string, tier: string): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -29,8 +30,17 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, subscriptionTier: "free" };
     this.users.set(id, user);
+    return user;
+  }
+
+  async updateSubscriptionTier(username: string, tier: string): Promise<User | undefined> {
+    const user = Array.from(this.users.values()).find(
+      (u) => u.username === username,
+    );
+    if (!user) return undefined;
+    user.subscriptionTier = tier;
     return user;
   }
 }

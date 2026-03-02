@@ -90,10 +90,15 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
 
   const [selectedPlan, setSelectedPlan] = useState<PlanSelection>('annual');
   const [purchasing, setPurchasing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [purchasedPlanLabel, setPurchasedPlanLabel] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const badgeScale = useRef(new Animated.Value(0)).current;
+  const confirmFadeAnim = useRef(new Animated.Value(0)).current;
+  const confirmScaleAnim = useRef(new Animated.Value(0.8)).current;
+  const checkmarkScale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -103,6 +108,27 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
 
     Animated.spring(badgeScale, { toValue: 1, friction: 4, tension: 60, useNativeDriver: true, delay: 300 }).start();
   }, []);
+
+  const showConfirmationScreen = (planLabel: string) => {
+    setPurchasedPlanLabel(planLabel);
+    setShowConfirmation(true);
+    confirmFadeAnim.setValue(0);
+    confirmScaleAnim.setValue(0.8);
+    checkmarkScale.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(confirmFadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(confirmScaleAnim, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+    ]).start(() => {
+      Animated.spring(checkmarkScale, { toValue: 1, friction: 4, tension: 50, useNativeDriver: true }).start();
+    });
+  };
+
+  const handleConfirmationContinue = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await setPaywallComplete();
+    onComplete();
+  };
 
   const handleContinue = async () => {
     if (selectedPlan === 'free') {
@@ -128,8 +154,8 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
       const success = await purchasePackage(pkg);
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await setPaywallComplete();
-        onComplete();
+        const planLabel = selectedPlan === 'annual' ? 'Annual' : 'Monthly';
+        showConfirmationScreen(planLabel);
       }
     } catch (e) {
       Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
@@ -149,9 +175,7 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
       const success = await restorePurchases();
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Restored', 'Your premium subscription has been restored.');
-        await setPaywallComplete();
-        onComplete();
+        showConfirmationScreen('Restored');
       } else {
         Alert.alert('No Subscription Found', 'We could not find an active subscription to restore.');
       }
@@ -166,6 +190,49 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
     Haptics.selectionAsync();
     setSelectedPlan(plan);
   };
+
+  if (showConfirmation) {
+    const unlockFeatures = roleKey === 'vet'
+      ? ['Unlimited client profiles', 'Unlimited patient records', 'Unlimited AI triage sessions']
+      : ['Unlimited pet profiles', 'Unlimited AI triage sessions', 'Priority support'];
+
+    return (
+      <View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.confirmationContainer,
+            { paddingTop: topInset + 40, paddingBottom: bottomInset + 20, opacity: confirmFadeAnim, transform: [{ scale: confirmScaleAnim }] },
+          ]}
+        >
+          <Animated.View style={[styles.confirmCheckCircle, { transform: [{ scale: checkmarkScale }] }]}>
+            <Ionicons name="checkmark" size={40} color="#FFFFFF" />
+          </Animated.View>
+
+          <Text style={styles.confirmTitle}>Welcome to Premium!</Text>
+          <Text style={styles.confirmSubtitle}>
+            Thank you for upgrading. Your {purchasedPlanLabel} plan is now active.
+          </Text>
+
+          <View style={styles.confirmUnlockedBox}>
+            <Text style={styles.confirmUnlockedLabel}>You've unlocked:</Text>
+            {unlockFeatures.map((feature) => (
+              <View key={feature} style={styles.confirmFeatureRow}>
+                <Ionicons name="checkmark-circle" size={20} color={C.accent} />
+                <Text style={styles.confirmFeatureText}>{feature}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Pressable onPress={handleConfirmationContinue} testID="confirmation-continue">
+            <LinearGradient colors={[C.accent, C.accentDim]} style={styles.confirmBtn}>
+              <Text style={styles.confirmBtnText}>Get Started</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -581,5 +648,82 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginTop: 16,
     paddingHorizontal: 8,
+  },
+  confirmationContainer: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 32,
+  },
+  confirmCheckCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: C.accent,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginBottom: 24,
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  confirmTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 28,
+    color: C.text,
+    textAlign: 'center' as const,
+    marginBottom: 10,
+  },
+  confirmSubtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: C.textSecondary,
+    textAlign: 'center' as const,
+    lineHeight: 22,
+    marginBottom: 32,
+    maxWidth: 300,
+  },
+  confirmUnlockedBox: {
+    width: '100%' as const,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  confirmUnlockedLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: C.textSecondary,
+    marginBottom: 14,
+    letterSpacing: 0.3,
+  },
+  confirmFeatureRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+    marginBottom: 10,
+  },
+  confirmFeatureText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: C.text,
+  },
+  confirmBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 48,
+  },
+  confirmBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 });

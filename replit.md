@@ -38,12 +38,14 @@ Preferred communication style: Simple, everyday language.
 - **Primary API Routes** (`server/routes.ts`):
   - `POST /api/triage` — AI symptom analysis using OpenAI (gpt-5.2 model). Takes pet info + symptoms, returns urgency assessment JSON.
   - `POST /api/care-tips` — AI-generated breed-specific care tips for the profile page.
+  - `PATCH /api/users/:username/subscription` — Update a user's subscription tier (free/premium). Auto-creates user if not found.
+  - `GET /api/users/:username/subscription` — Get a user's current subscription tier.
 - **CORS**: Dynamic CORS based on Replit domain environment variables, plus localhost support for dev.
 - **Static Serving**: In production, serves Expo web build from `dist/` directory. In development, proxies to Metro bundler.
 
 ### Database (PostgreSQL + Drizzle)
 - **ORM**: Drizzle ORM with PostgreSQL dialect, configured in `drizzle.config.ts`
-- **Schema** (`shared/schema.ts`): Currently defines a `users` table (id, username, password) — this appears to be scaffolding and is not actively used by the app's core pet features
+- **Schema** (`shared/schema.ts`): Defines a `users` table (id, username, password, subscription_tier). The subscription_tier column (default: 'free') is synced from the client after RevenueCat purchase/restore.
 - **Chat Models** (`shared/models/chat.ts`): Defines `conversations` and `messages` tables for a chat integration feature
 - **Storage Layer** (`server/storage.ts`): `MemStorage` class provides in-memory user storage (not using Drizzle for the main app data)
 - **Important**: The main pet data does NOT use the database — it's all in AsyncStorage on the client. The database is primarily used by the Replit integration modules (chat storage).

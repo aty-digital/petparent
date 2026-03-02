@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import OpenAI from "openai";
+import { storage } from "./storage";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -96,6 +97,48 @@ Please analyze these symptoms and provide your triage assessment.`;
     } catch (error) {
       console.error("Care tips error:", error);
       res.status(500).json({ error: "Failed to generate care tips" });
+    }
+  });
+
+  app.patch("/api/users/:username/subscription", async (req, res) => {
+    try {
+      const { username } = req.params;
+      const { tier } = req.body;
+
+      if (!tier || !["free", "premium"].includes(tier)) {
+        return res.status(400).json({ error: "Invalid tier. Must be 'free' or 'premium'." });
+      }
+
+      let user = await storage.getUserByUsername(username);
+      if (!user) {
+        user = await storage.createUser({ username, password: "" });
+      }
+
+      const updated = await storage.updateSubscriptionTier(username, tier);
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to update subscription tier" });
+      }
+
+      res.json({ username: updated.username, subscriptionTier: updated.subscriptionTier });
+    } catch (error) {
+      console.error("Subscription update error:", error);
+      res.status(500).json({ error: "Failed to update subscription" });
+    }
+  });
+
+  app.get("/api/users/:username/subscription", async (req, res) => {
+    try {
+      const { username } = req.params;
+      const user = await storage.getUserByUsername(username);
+
+      if (!user) {
+        return res.json({ username, subscriptionTier: "free" });
+      }
+
+      res.json({ username: user.username, subscriptionTier: user.subscriptionTier });
+    } catch (error) {
+      console.error("Subscription fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch subscription" });
     }
   });
 

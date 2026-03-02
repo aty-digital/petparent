@@ -9,6 +9,7 @@ export const users = pgTable("users", {
     .default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  subscriptionTier: text("subscription_tier").notNull().default("free"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
