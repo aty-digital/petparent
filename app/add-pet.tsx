@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Modal, ActivityIndicator,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ScrollView, KeyboardAvoidingView, Modal, ActivityIndicator, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +46,11 @@ export default function AddPetScreen() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [showPurchaseConfirmation, setShowPurchaseConfirmation] = useState(false);
+  const [purchasedPlanLabel, setPurchasedPlanLabel] = useState('');
+  const confirmFadeAnim = useRef(new Animated.Value(0)).current;
+  const confirmScaleAnim = useRef(new Animated.Value(0.8)).current;
+  const checkmarkScaleAnim = useRef(new Animated.Value(0)).current;
 
   const isValid = name.trim() && breed.trim() && weight.trim();
 
@@ -97,6 +102,26 @@ export default function AddPetScreen() {
     ? Math.round(100 - ((annualPackage.product.price / 12) / monthlyPackage.product.price) * 100)
     : 30;
 
+  const showConfirmation = (planLabel: string) => {
+    setPurchasedPlanLabel(planLabel);
+    setShowPurchaseConfirmation(true);
+    confirmFadeAnim.setValue(0);
+    confirmScaleAnim.setValue(0.8);
+    checkmarkScaleAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(confirmFadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(confirmScaleAnim, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+    ]).start(() => {
+      Animated.spring(checkmarkScaleAnim, { toValue: 1, friction: 4, tension: 50, useNativeDriver: true }).start();
+    });
+  };
+
+  const handleConfirmationDismiss = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowPurchaseConfirmation(false);
+    setShowPaywall(false);
+  };
+
   const handlePurchase = async () => {
     const pkg = selectedPlan === 'monthly' ? monthlyPackage : annualPackage;
     if (!pkg) {
@@ -108,7 +133,7 @@ export default function AddPetScreen() {
       const success = await purchasePackage(pkg);
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setShowPaywall(false);
+        showConfirmation(selectedPlan === 'annual' ? 'Annual' : 'Monthly');
       }
     } catch (_e) {
     } finally {
@@ -122,7 +147,7 @@ export default function AddPetScreen() {
       const success = await restorePurchases();
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setShowPaywall(false);
+        showConfirmation('Restored');
       }
     } catch (_e) {
     } finally {
@@ -322,88 +347,115 @@ export default function AddPetScreen() {
         animationType="slide"
         transparent
         statusBarTranslucent
-        onRequestClose={() => { if (!purchasing) { setShowPaywall(false); router.replace('/'); } }}
+        onRequestClose={() => { if (!purchasing && !showPurchaseConfirmation) { setShowPaywall(false); router.replace('/'); } }}
       >
         <View style={pw.overlay}>
           <View style={pw.sheet}>
-            <Pressable style={pw.closeBtn} onPress={() => { if (!purchasing) { setShowPaywall(false); router.replace('/'); } }}>
-              <Ionicons name="close" size={22} color={C.textMuted} />
-            </Pressable>
-
-            <View style={pw.iconBadge}>
-              <Ionicons name="star" size={28} color="#FFB800" />
-            </View>
-            <Text style={pw.title}>Upgrade to Premium</Text>
-            <Text style={pw.subtitle}>
-              Free plan allows 1 pet profile. Unlock unlimited pets and all premium features.
-            </Text>
-
-            <View style={pw.perksRow}>
-              {['Unlimited pets', 'Unlimited triage', 'Priority support'].map(perk => (
-                <View key={perk} style={pw.perkItem}>
-                  <Ionicons name="checkmark-circle" size={16} color={C.accent} />
-                  <Text style={pw.perkText}>{perk}</Text>
+            {showPurchaseConfirmation ? (
+              <Animated.View style={[pw.confirmContainer, { opacity: confirmFadeAnim, transform: [{ scale: confirmScaleAnim }] }]}>
+                <Animated.View style={[pw.confirmCheckCircle, { transform: [{ scale: checkmarkScaleAnim }] }]}>
+                  <Ionicons name="checkmark" size={32} color="#FFFFFF" />
+                </Animated.View>
+                <Text style={pw.confirmTitle}>Welcome to Premium!</Text>
+                <Text style={pw.confirmSubtitle}>
+                  Thank you for upgrading. Your {purchasedPlanLabel} plan is now active.
+                </Text>
+                <View style={pw.confirmFeatures}>
+                  {['Unlimited pet profiles', 'Unlimited AI triage sessions', 'Priority support'].map((feature) => (
+                    <View key={feature} style={pw.confirmFeatureRow}>
+                      <Ionicons name="checkmark-circle" size={18} color={C.accent} />
+                      <Text style={pw.confirmFeatureText}>{feature}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
+                <Pressable onPress={handleConfirmationDismiss}>
+                  <LinearGradient colors={[C.accent, C.accentDim]} style={pw.purchaseBtnGrad}>
+                    <Text style={pw.purchaseBtnText}>Get Started</Text>
+                  </LinearGradient>
+                </Pressable>
+              </Animated.View>
+            ) : (
+              <>
+                <Pressable style={pw.closeBtn} onPress={() => { if (!purchasing) { setShowPaywall(false); router.replace('/'); } }}>
+                  <Ionicons name="close" size={22} color={C.textMuted} />
+                </Pressable>
 
-            <Pressable
-              style={[pw.planCard, selectedPlan === 'annual' && pw.planCardSelected]}
-              onPress={() => setSelectedPlan('annual')}
-            >
-              <View style={pw.planRadio}>
-                {selectedPlan === 'annual' ? (
-                  <View style={pw.planRadioFilled} />
-                ) : (
-                  <View style={pw.planRadioEmpty} />
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={pw.planName}>Annual</Text>
-                  <View style={pw.saveBadge}>
-                    <Text style={pw.saveBadgeText}>Save {savingsPercent}%</Text>
+                <View style={pw.iconBadge}>
+                  <Ionicons name="star" size={28} color="#FFB800" />
+                </View>
+                <Text style={pw.title}>Upgrade to Premium</Text>
+                <Text style={pw.subtitle}>
+                  Free plan allows 1 pet profile. Unlock unlimited pets and all premium features.
+                </Text>
+
+                <View style={pw.perksRow}>
+                  {['Unlimited pets', 'Unlimited triage', 'Priority support'].map(perk => (
+                    <View key={perk} style={pw.perkItem}>
+                      <Ionicons name="checkmark-circle" size={16} color={C.accent} />
+                      <Text style={pw.perkText}>{perk}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Pressable
+                  style={[pw.planCard, selectedPlan === 'annual' && pw.planCardSelected]}
+                  onPress={() => setSelectedPlan('annual')}
+                >
+                  <View style={pw.planRadio}>
+                    {selectedPlan === 'annual' ? (
+                      <View style={pw.planRadioFilled} />
+                    ) : (
+                      <View style={pw.planRadioEmpty} />
+                    )}
                   </View>
-                </View>
-                <Text style={pw.planPrice}>{annualPrice}</Text>
-                <Text style={pw.planSub}>{annualMonthly} billed annually</Text>
-              </View>
-            </Pressable>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={pw.planName}>Annual</Text>
+                      <View style={pw.saveBadge}>
+                        <Text style={pw.saveBadgeText}>Save {savingsPercent}%</Text>
+                      </View>
+                    </View>
+                    <Text style={pw.planPrice}>{annualPrice}</Text>
+                    <Text style={pw.planSub}>{annualMonthly} billed annually</Text>
+                  </View>
+                </Pressable>
 
-            <Pressable
-              style={[pw.planCard, selectedPlan === 'monthly' && pw.planCardSelected]}
-              onPress={() => setSelectedPlan('monthly')}
-            >
-              <View style={pw.planRadio}>
-                {selectedPlan === 'monthly' ? (
-                  <View style={pw.planRadioFilled} />
-                ) : (
-                  <View style={pw.planRadioEmpty} />
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={pw.planName}>Monthly</Text>
-                <Text style={pw.planPrice}>{monthlyPrice}</Text>
-              </View>
-            </Pressable>
+                <Pressable
+                  style={[pw.planCard, selectedPlan === 'monthly' && pw.planCardSelected]}
+                  onPress={() => setSelectedPlan('monthly')}
+                >
+                  <View style={pw.planRadio}>
+                    {selectedPlan === 'monthly' ? (
+                      <View style={pw.planRadioFilled} />
+                    ) : (
+                      <View style={pw.planRadioEmpty} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={pw.planName}>Monthly</Text>
+                    <Text style={pw.planPrice}>{monthlyPrice}</Text>
+                  </View>
+                </Pressable>
 
-            <Pressable style={pw.purchaseBtn} onPress={handlePurchase} disabled={purchasing}>
-              <LinearGradient colors={[C.accent, C.accentDim]} style={pw.purchaseBtnGrad}>
-                {purchasing ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={pw.purchaseBtnText}>Continue</Text>
-                )}
-              </LinearGradient>
-            </Pressable>
+                <Pressable style={pw.purchaseBtn} onPress={handlePurchase} disabled={purchasing}>
+                  <LinearGradient colors={[C.accent, C.accentDim]} style={pw.purchaseBtnGrad}>
+                    {purchasing ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={pw.purchaseBtnText}>Continue</Text>
+                    )}
+                  </LinearGradient>
+                </Pressable>
 
-            <Pressable style={pw.restoreBtn} onPress={handleRestore} disabled={restoring}>
-              <Text style={pw.restoreText}>{restoring ? 'Restoring...' : 'Restore Purchases'}</Text>
-            </Pressable>
+                <Pressable style={pw.restoreBtn} onPress={handleRestore} disabled={restoring}>
+                  <Text style={pw.restoreText}>{restoring ? 'Restoring...' : 'Restore Purchases'}</Text>
+                </Pressable>
 
-            <Text style={pw.legal}>
-              Payment will be charged to your Apple ID account at confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in your Account Settings.
-            </Text>
+                <Text style={pw.legal}>
+                  Payment will be charged to your Apple ID account at confirmation. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in your Account Settings.
+                </Text>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -610,5 +662,59 @@ const pw = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 14,
     paddingHorizontal: 8,
+  },
+  confirmContainer: {
+    alignItems: 'center' as const,
+    paddingVertical: 16,
+  },
+  confirmCheckCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: C.accent,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginBottom: 20,
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  confirmTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: C.text,
+    textAlign: 'center' as const,
+    marginBottom: 8,
+  },
+  confirmSubtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center' as const,
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  confirmFeatures: {
+    width: '100%' as const,
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    gap: 10,
+  },
+  confirmFeatureRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+  },
+  confirmFeatureText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: C.text,
   },
 });
