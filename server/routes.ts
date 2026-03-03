@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import OpenAI from "openai";
 import { storage } from "./storage";
+import { createOrUpdateContact, moveContactToList } from "./brevo";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -139,6 +140,50 @@ Please analyze these symptoms and provide your triage assessment.`;
     } catch (error) {
       console.error("Subscription fetch error:", error);
       res.status(500).json({ error: "Failed to fetch subscription" });
+    }
+  });
+
+  const FREE_LIST_ID = parseInt(process.env.BREVO_FREE_LIST_ID || "2", 10);
+  const PREMIUM_LIST_ID = parseInt(process.env.BREVO_PREMIUM_LIST_ID || "3", 10);
+
+  app.post("/api/brevo/signup", async (req, res) => {
+    try {
+      const { email, firstName, userRole, petName, petSpecies, petBreed } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const attributes: Record<string, string> = {
+        FIRSTNAME: firstName || "",
+        SUBSCRIPTION_TIER: "free",
+      };
+      if (userRole) attributes.USER_ROLE = userRole;
+      if (petName) attributes.PET_NAME = petName;
+      if (petSpecies) attributes.PET_SPECIES = petSpecies;
+      if (petBreed) attributes.PET_BREED = petBreed;
+
+      await createOrUpdateContact(email, attributes, [FREE_LIST_ID]);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Brevo signup sync error:", error);
+      res.status(500).json({ success: false, error: "Failed to sync contact to Brevo" });
+    }
+  });
+
+  app.post("/api/brevo/upgrade", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      await moveContactToList(email, FREE_LIST_ID, PREMIUM_LIST_ID);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Brevo upgrade sync error:", error);
+      res.status(500).json({ success: false, error: "Failed to sync upgrade to Brevo" });
     }
   });
 

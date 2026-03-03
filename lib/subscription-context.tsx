@@ -159,12 +159,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const syncBrevoUpgrade = (email: string) => {
+    apiRequest('POST', '/api/brevo/upgrade', { email })
+      .catch(e => console.log('Brevo upgrade sync (non-blocking):', e));
+  };
+
   const checkEntitlements = (customerInfo: CustomerInfo) => {
     if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
       setTier('premium');
       if (userEmail) {
         AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
         syncTierToBackend(userEmail, 'premium');
+        syncBrevoUpgrade(userEmail);
       }
     }
   };
@@ -181,6 +187,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (userEmail) {
           await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
           await syncTierToBackend(userEmail, 'premium');
+          syncBrevoUpgrade(userEmail);
         }
         return true;
       }
@@ -201,6 +208,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (userEmail) {
           await AsyncStorage.setItem(subKey(userEmail, 'subscription_tier'), 'premium');
           await syncTierToBackend(userEmail, 'premium');
+          syncBrevoUpgrade(userEmail);
         }
         return true;
       }

@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as Notifications from 'expo-notifications';
+import { apiRequest } from './query-client';
 import type { Pet, MedicalRecord, DailyLog, DailyEntry, HealthTask, TriageResult, SharedPet, SitterNote, InviteCode, PendingSitterNote, InAppNotification } from './types';
 
 function secureKey(email: string): string {
@@ -635,6 +636,11 @@ export function PetProvider({ children }: { children: ReactNode }) {
       AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail),
     ]);
 
+    apiRequest('POST', '/api/brevo/signup', {
+      email: normalizedEmail,
+      firstName: name,
+    }).catch(e => console.log('Brevo signup sync (non-blocking):', e));
+
     return { success: true };
   }, [clearInMemoryState]);
 
@@ -666,8 +672,18 @@ export function PetProvider({ children }: { children: ReactNode }) {
     setOnboardingComplete(true);
     if (userEmail) {
       await AsyncStorage.setItem(userKey(userEmail, 'onboarding_complete'), 'true');
+
+      const firstPet = pets.length > 0 ? pets[0] : null;
+      apiRequest('POST', '/api/brevo/signup', {
+        email: userEmail,
+        firstName: userName,
+        userRole: userRole || undefined,
+        petName: firstPet?.name || undefined,
+        petSpecies: firstPet?.species || undefined,
+        petBreed: firstPet?.breed || undefined,
+      }).catch(e => console.log('Brevo onboarding sync (non-blocking):', e));
     }
-  }, [userEmail]);
+  }, [userEmail, userName, userRole, pets]);
 
   const updateEmail = useCallback(async (newEmail: string) => {
     const normalizedNew = newEmail.toLowerCase().trim();

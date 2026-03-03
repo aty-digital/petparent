@@ -78,3 +78,5 @@ ensurePreviewReachable = "/status"
 
 [userenv.shared]
 EXPO_PUBLIC_REVENUECAT_IOS_KEY = "appl_DfJcjepTpMwijoUPeaWwFNIMTxc"
+BREVO_FREE_LIST_ID = "2"
+BREVO_PREMIUM_LIST_ID = "3"

@@ -90,6 +90,19 @@ Pre-built integration modules that provide:
 - **expo-location**: Location services (available but usage not prominent)
 - **patch-package**: Applied via postinstall script for dependency patches
 
+### Brevo Email Marketing Integration
+- **Service Module** (`server/brevo.ts`): Helper functions for Brevo REST API v3:
+  - `createOrUpdateContact(email, attributes, listIds)` — Creates or updates a Brevo contact with attributes and assigns to list(s)
+  - `removeContactFromList(email, listId)` — Removes a contact from a specific list
+  - `moveContactToList(email, removeFromListId, addToListId)` — Moves a contact between lists (removes from one, adds to another)
+- **API Endpoints** (in `server/routes.ts`):
+  - `POST /api/brevo/signup` — Called after user signup and onboarding completion. Creates contact on the FREE list with attributes: FIRSTNAME, USER_ROLE, PET_NAME, PET_SPECIES, PET_BREED, SUBSCRIPTION_TIER.
+  - `POST /api/brevo/upgrade` — Called after premium purchase/restore. Moves contact from FREE list to PREMIUM list.
+- **Frontend Integration**:
+  - `lib/pet-context.tsx`: Fires `/api/brevo/signup` after signup (with name/email) and again after onboarding completes (with role + pet details). Both calls are fire-and-forget.
+  - `lib/subscription-context.tsx`: Fires `/api/brevo/upgrade` after successful purchase, restore, or entitlement check. Fire-and-forget.
+- **Two Brevo Lists**: FREE users (for conversion campaigns) and PREMIUM users (for retention campaigns). List IDs are configured via environment variables.
+
 ### Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
 - `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key (via Replit AI Integrations)
@@ -98,3 +111,6 @@ Pre-built integration modules that provide:
 - `REPLIT_DEV_DOMAIN`: Replit development domain (auto-set by Replit)
 - `EXPO_PUBLIC_REVENUECAT_IOS_KEY`: RevenueCat iOS public API key for in-app purchases
 - `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`: RevenueCat Android public API key (not yet configured)
+- `BREVO_API_KEY`: Brevo REST API key (secret)
+- `BREVO_FREE_LIST_ID`: Brevo list ID for Free users (default: 2)
+- `BREVO_PREMIUM_LIST_ID`: Brevo list ID for Premium users (default: 3)
