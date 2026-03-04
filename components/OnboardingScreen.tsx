@@ -404,6 +404,10 @@ export default function OnboardingScreen() {
             <Pressable onPress={() => router.push('/terms-of-service')} hitSlop={8}>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#FFFFFFAA', textDecorationLine: 'underline' }}>Terms of Service</Text>
             </Pressable>
+            <Text style={{ fontSize: 11, color: '#FFFFFF66' }}>|</Text>
+            <Pressable onPress={() => router.push('/support')} hitSlop={8} testID="welcome-support">
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#FFFFFFAA', textDecorationLine: 'underline' }}>Support</Text>
+            </Pressable>
           </View>
         </StaggerItem>
       </LinearGradient>
@@ -701,6 +705,10 @@ export default function OnboardingScreen() {
         <StaggerItem anim={signupAnims[4]}>
           <Pressable onPress={() => { setSignupError(''); animateTransition('login'); }} style={{ marginTop: 16, alignItems: 'center' }}>
             <Text style={styles.switchAuthText}>Already have an account? <Text style={{ color: C.accent }}>Log In</Text></Text>
+          </Pressable>
+
+          <Pressable onPress={() => router.push('/support')} style={{ marginTop: 12, alignItems: 'center' }} hitSlop={8} testID="signup-support">
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: C.accent, textDecorationLine: 'underline' }}>Support</Text>
           </Pressable>
 
           <Text style={styles.poweredBy}>Powered by ATY Digital</Text>

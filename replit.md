@@ -61,6 +61,7 @@ Pre-built integration modules that provide:
 - **Landing Page** (`server/templates/landing-page.html`): Marketing landing page for PetParent served at `/` on port 5000. Features hero section, feature cards (AI Triage, Tracker, Records, Collaboration), benefits section, App Store placeholder, and developer preview with QR code. Target custom domain: `pet-parent.app`. Uses Inter font, green (#2D6A4F) accent, warm (#FAF8F0) background. Includes dark mode support and responsive design.
 - **Privacy Policy** (`server/templates/privacy-policy.html`): Served at `/privacy-policy`. Covers data collection, usage, security, and user rights.
 - **Terms of Service** (`server/templates/terms-of-service.html`): Served at `/terms-of-service`. Covers acceptable use, AI triage disclaimers, intellectual property, and liability.
+- **Support** (`server/templates/support.html`): Served at `/support`. Provides contact info: email (hello@atydigital.com) and website link (atydigital.com). Also accessible as an Expo screen (`app/support.tsx`) linked from the Welcome and Create Account onboarding screens.
 - **Footer**: All pages include "Powered by ATY Digital" linking to `https://www.atydigital.com/about`.
 - **Routes**: Defined in `server/index.ts` within `configureExpoAndLanding()`.
 

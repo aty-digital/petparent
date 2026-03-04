@@ -39,6 +39,7 @@ function MainStack() {
       <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="privacy-policy" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="terms-of-service" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="support" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="notifications" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
     </Stack>
   );

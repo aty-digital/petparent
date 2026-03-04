@@ -172,6 +172,8 @@ function configureExpoAndLanding(app: express.Application) {
   const privacyPolicyTemplate = fs.readFileSync(privacyPolicyPath, "utf-8");
   const termsOfServicePath = path.resolve(process.cwd(), "server", "templates", "terms-of-service.html");
   const termsOfServiceTemplate = fs.readFileSync(termsOfServicePath, "utf-8");
+  const supportPath = path.resolve(process.cwd(), "server", "templates", "support.html");
+  const supportTemplate = fs.readFileSync(supportPath, "utf-8");
   const appName = getAppName();
 
   log("Serving static Expo files with dynamic manifest routing");
@@ -181,7 +183,7 @@ function configureExpoAndLanding(app: express.Application) {
       return next();
     }
 
-    if (req.path !== "/" && req.path !== "/manifest" && req.path !== "/privacy-policy" && req.path !== "/terms-of-service") {
+    if (req.path !== "/" && req.path !== "/manifest" && req.path !== "/privacy-policy" && req.path !== "/terms-of-service" && req.path !== "/support") {
       return next();
     }
 
@@ -207,6 +209,11 @@ function configureExpoAndLanding(app: express.Application) {
     if (req.path === "/terms-of-service") {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.status(200).send(termsOfServiceTemplate);
+    }
+
+    if (req.path === "/support") {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(supportTemplate);
     }
 
     next();
