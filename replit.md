@@ -26,8 +26,9 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Expo SDK 54 with React Native 0.81, using expo-router for file-based routing
 - **Navigation**: Tab-based layout with 4 tabs (Home, Records, Tracker, Profile) plus modal screens for forms (add-pet, add-record, add-task, triage, daily-tracker, edit-pet, settings)
 - **State Management**: React Context (`PetProvider` in `lib/pet-context.tsx`) manages all pet-related state. No Redux or external state library.
-- **Local Storage**: All pet data (pets, records, daily logs, tasks, triage results) persists via `@react-native-async-storage/async-storage` with keys scoped per user email (format: `@pawguard_user_{email}_{suffix}`). An accounts registry (`@pawguard_accounts_registry`) tracks all registered accounts. Active session stored in `@pawguard_active_session`. This is the primary data store for user content — not the PostgreSQL database.
-- **Multi-Account Support**: Each user's data is fully isolated by email. Signup checks the accounts registry for duplicate emails. Login verifies credentials from the registry and loads user-scoped data. Logout clears in-memory state and session.
+- **Local Storage**: All pet data (pets, records, daily logs, tasks, triage results) persists via `@react-native-async-storage/async-storage` with keys scoped per user email (format: `@pawguard_user_{email}_{suffix}`). A local accounts registry (`@pawguard_accounts_registry`) is maintained as a cache/fallback. Active session stored in `@pawguard_active_session`.
+- **Authentication**: Server-side auth via `POST /api/auth/signup` and `POST /api/auth/login`. Passwords are hashed with bcrypt and stored in PostgreSQL. The client falls back to the local accounts registry if the server is unreachable. On local-only login, the client silently attempts to sync the account to the server in the background.
+- **Multi-Account Support**: Each user's data is fully isolated by email. Users can sign up on one device and log in on any other device since credentials are stored server-side.
 - **Subscription/Paywall**: `SubscriptionProvider` (in `lib/subscription-context.tsx`) manages RevenueCat integration, free/premium tier enforcement, triage usage tracking (3/month free), and pet count limits (1 pet free). Subscription data is also scoped per user email.
 - **Styling**: Inline StyleSheet with a consistent dark theme defined in `constants/colors.ts`. Uses Inter font family loaded via `@expo-google-fonts/inter`.
 - **API Communication**: `lib/query-client.ts` provides `apiRequest()` helper using `expo/fetch`. TanStack React Query is available but the app primarily uses direct API calls for triage and care tips.
@@ -36,6 +37,8 @@ Preferred communication style: Simple, everyday language.
 ### Backend (Express)
 - **Server**: Express 5 running in `server/index.ts`, serves on port 5000
 - **Primary API Routes** (`server/routes.ts`):
+  - `POST /api/auth/signup` — Create a new user account. Hashes password with bcrypt, stores in PostgreSQL.
+  - `POST /api/auth/login` — Verify credentials against PostgreSQL. Returns user info on success.
   - `POST /api/triage` — AI symptom analysis using OpenAI (gpt-5.2 model). Takes pet info + symptoms, returns urgency assessment JSON.
   - `POST /api/care-tips` — AI-generated breed-specific care tips for the profile page.
   - `PATCH /api/users/:username/subscription` — Update a user's subscription tier (free/premium). Auto-creates user if not found.
@@ -45,10 +48,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Database (PostgreSQL + Drizzle)
 - **ORM**: Drizzle ORM with PostgreSQL dialect, configured in `drizzle.config.ts`
-- **Schema** (`shared/schema.ts`): Defines a `users` table (id, username, password, subscription_tier). The subscription_tier column (default: 'free') is synced from the client after RevenueCat purchase/restore.
+- **Schema** (`shared/schema.ts`): Defines a `users` table (id, username, password, name, subscription_tier). Used for server-side authentication with bcrypt-hashed passwords. The subscription_tier column (default: 'free') is synced from the client after RevenueCat purchase/restore.
+- **Database Connection** (`server/db.ts`): Drizzle ORM connection to PostgreSQL via `pg` pool.
 - **Chat Models** (`shared/models/chat.ts`): Defines `conversations` and `messages` tables for a chat integration feature
-- **Storage Layer** (`server/storage.ts`): `MemStorage` class provides in-memory user storage (not using Drizzle for the main app data)
-- **Important**: The main pet data does NOT use the database — it's all in AsyncStorage on the client. The database is primarily used by the Replit integration modules (chat storage).
+- **Storage Layer** (`server/storage.ts`): `DatabaseStorage` class uses PostgreSQL via Drizzle for user CRUD operations.
+- **Important**: Pet data (pets, records, logs, tasks, triage) is stored in AsyncStorage on the client. The PostgreSQL database stores user accounts (for cross-device auth) and chat integration data.
 
 ### Replit Integration Modules (`server/replit_integrations/`)
 Pre-built integration modules that provide:

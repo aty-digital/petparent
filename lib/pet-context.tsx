@@ -616,14 +616,34 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const normalizedEmail = email.toLowerCase().trim();
-    const accounts = await getAccountsRegistry();
-    const existing = accounts.find(a => a.email === normalizedEmail);
-    if (existing) {
-      return { success: false, error: 'An account with this email already exists. Please log in instead.' };
+
+    try {
+      const res = await apiRequest('POST', '/api/auth/signup', {
+        email: normalizedEmail,
+        password,
+        name: name.trim(),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        return { success: false, error: data.error || 'Failed to create account.' };
+      }
+    } catch (e: any) {
+      const errorMsg = String(e?.message || '');
+      if (errorMsg.includes('409') || errorMsg.toLowerCase().includes('already exists')) {
+        return { success: false, error: 'An account with this email already exists. Please log in instead.' };
+      }
+      if (errorMsg.includes('400')) {
+        return { success: false, error: 'Please fill in all required fields.' };
+      }
+      console.log('Server signup unavailable, continuing with local account:', errorMsg);
     }
 
-    const updatedAccounts = [...accounts, { email: normalizedEmail, password, name }];
-    await saveAccountsRegistry(updatedAccounts);
+    const accounts = await getAccountsRegistry();
+    const existing = accounts.find(a => a.email === normalizedEmail);
+    if (!existing) {
+      const updatedAccounts = [...accounts, { email: normalizedEmail, password, name }];
+      await saveAccountsRegistry(updatedAccounts);
+    }
 
     clearInMemoryState();
 
@@ -646,14 +666,77 @@ export function PetProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     const normalizedEmail = email.toLowerCase().trim();
-    const accounts = await getAccountsRegistry();
-    const account = accounts.find(a => a.email === normalizedEmail);
-    if (!account) return false;
 
-    const storedPassword = await getSecurePassword(normalizedEmail);
-    const passwordMatch = storedPassword ? storedPassword === password : account.password === password;
-    if (!passwordMatch) {
-      return false;
+    let serverLoginSuccess = false;
+    let serverUserName = '';
+    try {
+      const res = await apiRequest('POST', '/api/auth/login', {
+        email: normalizedEmail,
+        password,
+      });
+      const data = await res.json();
+      if (data.success) {
+        serverLoginSuccess = true;
+        serverUserName = data.user?.name || '';
+      }
+    } catch (e: any) {
+      const errorMsg = e?.message || '';
+      if (errorMsg.includes('401')) {
+        const accounts = await getAccountsRegistry();
+        const localAccount = accounts.find(a => a.email === normalizedEmail);
+        if (localAccount) {
+          const storedPassword = await getSecurePassword(normalizedEmail);
+          const passwordMatch = storedPassword ? storedPassword === password : localAccount.password === password;
+          if (passwordMatch) {
+            apiRequest('POST', '/api/auth/signup', {
+              email: normalizedEmail,
+              password,
+              name: localAccount.name,
+            }).catch(() => {});
+
+            clearInMemoryState();
+            await AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail);
+            await loadUserData(normalizedEmail);
+            setOnboardingComplete(true);
+            return true;
+          }
+        }
+        return false;
+      }
+      console.log('Server login unavailable, falling back to local:', errorMsg);
+      const accounts = await getAccountsRegistry();
+      const account = accounts.find(a => a.email === normalizedEmail);
+      if (!account) return false;
+
+      const storedPassword = await getSecurePassword(normalizedEmail);
+      const passwordMatch = storedPassword ? storedPassword === password : account.password === password;
+      if (!passwordMatch) return false;
+
+      apiRequest('POST', '/api/auth/signup', {
+        email: normalizedEmail,
+        password,
+        name: account.name,
+      }).catch(() => {});
+
+      clearInMemoryState();
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail);
+      await loadUserData(normalizedEmail);
+      setOnboardingComplete(true);
+      return true;
+    }
+
+    if (!serverLoginSuccess) return false;
+
+    const accounts = await getAccountsRegistry();
+    const existingLocal = accounts.find(a => a.email === normalizedEmail);
+    if (!existingLocal) {
+      const updatedAccounts = [...accounts, { email: normalizedEmail, password, name: serverUserName }];
+      await saveAccountsRegistry(updatedAccounts);
+    }
+    await setSecurePassword(normalizedEmail, password);
+
+    if (serverUserName) {
+      await AsyncStorage.setItem(userKey(normalizedEmail, 'name'), serverUserName);
     }
 
     clearInMemoryState();

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import OpenAI from "openai";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { createOrUpdateContact, moveContactToList } from "./brevo";
 
@@ -10,6 +11,76 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password, name } = req.body;
+
+      if (!email || !password || !name) {
+        return res.status(400).json({ error: "Email, password, and name are required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const existing = await storage.getUserByUsername(normalizedEmail);
+      if (existing) {
+        return res.status(409).json({ error: "An account with this email already exists." });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        username: normalizedEmail,
+        password: hashedPassword,
+        name: name.trim(),
+      });
+
+      res.json({
+        success: true,
+        user: {
+          email: user.username,
+          name: user.name,
+          subscriptionTier: user.subscriptionTier,
+        },
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "Failed to create account" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const user = await storage.getUserByUsername(normalizedEmail);
+
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      res.json({
+        success: true,
+        user: {
+          email: user.username,
+          name: user.name,
+          subscriptionTier: user.subscriptionTier,
+        },
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Failed to log in" });
+    }
+  });
+
   app.post("/api/triage", async (req, res) => {
     try {
       const { symptoms, petName, breed, species, age, weight } = req.body;
@@ -110,9 +181,9 @@ Please analyze these symptoms and provide your triage assessment.`;
         return res.status(400).json({ error: "Invalid tier. Must be 'free' or 'premium'." });
       }
 
-      let user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByUsername(username);
       if (!user) {
-        user = await storage.createUser({ username, password: "" });
+        return res.json({ username, subscriptionTier: tier });
       }
 
       const updated = await storage.updateSubscriptionTier(username, tier);
