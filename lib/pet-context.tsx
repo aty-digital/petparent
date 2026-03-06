@@ -228,11 +228,44 @@ export function PetProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const ensureAccountSynced = async (email: string) => {
+    try {
+      const accounts = await getAccountsRegistry();
+      const localAccount = accounts.find(a => a.email === email);
+      if (!localAccount) return;
+
+      const storedPassword = await getSecurePassword(email);
+      const password = storedPassword || localAccount.password;
+      if (!password) return;
+
+      const res = await apiRequest('POST', '/api/auth/login', { email, password });
+      const data = await res.json();
+      if (data.success) return;
+    } catch (e: any) {
+      const errorMsg = String(e?.message || '');
+      if (errorMsg.includes('404')) {
+        const accounts = await getAccountsRegistry();
+        const localAccount = accounts.find(a => a.email === email);
+        if (!localAccount) return;
+
+        const storedPassword = await getSecurePassword(email);
+        const password = storedPassword || localAccount.password;
+        if (!password) return;
+
+        const synced = await syncLocalAccountToServer(email, password, localAccount.name);
+        if (synced) {
+          console.log('Session restore: synced account to server:', email);
+        }
+      }
+    }
+  };
+
   const restoreSession = async () => {
     try {
       const activeEmail = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
       if (activeEmail) {
         await loadUserData(activeEmail);
+        ensureAccountSynced(activeEmail).catch(() => {});
       }
     } catch (e) {
       console.error('Failed to restore session:', e);
@@ -664,11 +697,34 @@ export function PetProvider({ children }: { children: ReactNode }) {
     return { success: true };
   }, [clearInMemoryState]);
 
+  const syncLocalAccountToServer = async (email: string, password: string, name: string): Promise<boolean> => {
+    try {
+      const res = await apiRequest('POST', '/api/auth/signup', {
+        email,
+        password,
+        name,
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch (e: any) {
+      const errorMsg = String(e?.message || '');
+      if (errorMsg.includes('409')) {
+        return true;
+      }
+      console.warn('Failed to sync account to server:', errorMsg);
+      return false;
+    }
+  };
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     const normalizedEmail = email.toLowerCase().trim();
 
     let serverLoginSuccess = false;
     let serverUserName = '';
+    let userNotFoundOnServer = false;
+    let wrongPassword = false;
+    let serverUnavailable = false;
+
     try {
       const res = await apiRequest('POST', '/api/auth/login', {
         email: normalizedEmail,
@@ -680,30 +736,45 @@ export function PetProvider({ children }: { children: ReactNode }) {
         serverUserName = data.user?.name || '';
       }
     } catch (e: any) {
-      const errorMsg = e?.message || '';
-      if (errorMsg.includes('401')) {
-        const accounts = await getAccountsRegistry();
-        const localAccount = accounts.find(a => a.email === normalizedEmail);
-        if (localAccount) {
-          const storedPassword = await getSecurePassword(normalizedEmail);
-          const passwordMatch = storedPassword ? storedPassword === password : localAccount.password === password;
-          if (passwordMatch) {
-            apiRequest('POST', '/api/auth/signup', {
-              email: normalizedEmail,
-              password,
-              name: localAccount.name,
-            }).catch(() => {});
-
-            clearInMemoryState();
-            await AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail);
-            await loadUserData(normalizedEmail);
-            setOnboardingComplete(true);
-            return true;
-          }
-        }
-        return false;
+      const errorMsg = String(e?.message || '');
+      if (errorMsg.includes('404')) {
+        userNotFoundOnServer = true;
+      } else if (errorMsg.includes('401')) {
+        wrongPassword = true;
+      } else {
+        serverUnavailable = true;
+        console.log('Server login unavailable, falling back to local:', errorMsg);
       }
-      console.log('Server login unavailable, falling back to local:', errorMsg);
+    }
+
+    if (wrongPassword) {
+      return false;
+    }
+
+    if (userNotFoundOnServer) {
+      const accounts = await getAccountsRegistry();
+      const localAccount = accounts.find(a => a.email === normalizedEmail);
+      if (!localAccount) return false;
+
+      const storedPassword = await getSecurePassword(normalizedEmail);
+      const passwordMatch = storedPassword ? storedPassword === password : localAccount.password === password;
+      if (!passwordMatch) return false;
+
+      const synced = await syncLocalAccountToServer(normalizedEmail, password, localAccount.name);
+      if (synced) {
+        console.log('Successfully synced local account to server:', normalizedEmail);
+      } else {
+        console.warn('Could not sync account to server, proceeding with local login');
+      }
+
+      clearInMemoryState();
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail);
+      await loadUserData(normalizedEmail);
+      setOnboardingComplete(true);
+      return true;
+    }
+
+    if (serverUnavailable) {
       const accounts = await getAccountsRegistry();
       const account = accounts.find(a => a.email === normalizedEmail);
       if (!account) return false;
@@ -712,11 +783,7 @@ export function PetProvider({ children }: { children: ReactNode }) {
       const passwordMatch = storedPassword ? storedPassword === password : account.password === password;
       if (!passwordMatch) return false;
 
-      apiRequest('POST', '/api/auth/signup', {
-        email: normalizedEmail,
-        password,
-        name: account.name,
-      }).catch(() => {});
+      syncLocalAccountToServer(normalizedEmail, password, account.name).catch(() => {});
 
       clearInMemoryState();
       await AsyncStorage.setItem(ACTIVE_SESSION_KEY, normalizedEmail);

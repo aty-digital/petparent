@@ -59,12 +59,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByUsername(normalizedEmail);
 
       if (!user) {
-        return res.status(401).json({ error: "Invalid email or password" });
+        return res.status(404).json({ error: "Account not found", code: "USER_NOT_FOUND" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        return res.status(401).json({ error: "Invalid email or password" });
+        return res.status(401).json({ error: "Invalid email or password", code: "WRONG_PASSWORD" });
       }
 
       res.json({
