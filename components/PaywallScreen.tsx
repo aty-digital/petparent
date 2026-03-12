@@ -144,18 +144,27 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
     const pkg = selectedPlan === 'monthly' ? monthlyPackage : annualPackage;
 
     if (!pkg) {
-      await setPaywallComplete();
-      onComplete();
       setPurchasing(false);
+      Alert.alert(
+        'Store Unavailable',
+        'Subscriptions are temporarily unavailable. Please try again in a moment.',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
     try {
-      const success = await purchasePackage(pkg);
-      if (success) {
+      const result = await purchasePackage(pkg);
+      if (result === 'success') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const planLabel = selectedPlan === 'annual' ? 'Annual' : 'Monthly';
         showConfirmationScreen(planLabel);
+      } else if (result === 'failed') {
+        Alert.alert(
+          'Purchase Not Completed',
+          'The purchase could not be completed. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (e) {
       Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');

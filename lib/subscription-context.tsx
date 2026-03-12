@@ -13,7 +13,7 @@ interface SubscriptionContextValue {
   packages: PurchasesPackage[];
   monthlyPackage: PurchasesPackage | null;
   annualPackage: PurchasesPackage | null;
-  purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
+  purchasePackage: (pkg: PurchasesPackage) => Promise<'success' | 'cancelled' | 'failed'>;
   restorePurchases: () => Promise<boolean>;
   canAddMorePets: (currentPetCount: number) => boolean;
   canUseTriageThisMonth: () => boolean;
@@ -175,7 +175,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<'success' | 'cancelled' | 'failed'> => {
     if (!rcInitialized) {
       console.warn('RevenueCat not initialized — purchase unavailable');
       throw new Error('Purchases are not available right now. Please try again later.');
@@ -189,13 +189,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           await syncTierToBackend(userEmail, 'premium');
           syncBrevoUpgrade(userEmail);
         }
-        return true;
+        return 'success';
       }
-      return false;
+      return 'failed';
     } catch (e: any) {
-      if (e.userCancelled) return false;
+      if (e.userCancelled) return 'cancelled';
       console.error('Purchase failed:', e);
-      return false;
+      throw e;
     }
   }, [rcInitialized, userEmail]);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Pressable, Platform, ActivityIndicator, ScrollView, KeyboardAvoidingView, Modal, Animated,
+  StyleSheet, Text, View, TextInput, Pressable, Platform, ActivityIndicator, ScrollView, KeyboardAvoidingView, Modal, Animated, Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -172,12 +172,15 @@ export default function TriageScreen() {
     }
     setPurchasing(true);
     try {
-      const success = await purchasePackage(pkg);
-      if (success) {
+      const result = await purchasePackage(pkg);
+      if (result === 'success') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showConfirmationModal(selectedPlan === 'annual' ? 'Annual' : 'Monthly');
+      } else if (result === 'failed') {
+        Alert.alert('Purchase Not Completed', 'The purchase could not be completed. Please try again.');
       }
     } catch (_e) {
+      Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
     } finally {
       setPurchasing(false);
     }
