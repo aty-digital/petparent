@@ -329,6 +329,7 @@ export default function OnboardingScreen() {
   const handleComplete = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await completeOnboarding();
+    router.replace('/(tabs)');
   };
 
   const renderIntroWelcome = () => (

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
@@ -14,7 +14,6 @@ import { SubscriptionProvider } from "@/lib/subscription-context";
 import { NotificationProvider } from "@/lib/notification-context";
 import SwoopNotification from "@/components/SwoopNotification";
 import SitterNoteModal from "@/components/SitterNoteModal";
-import OnboardingScreen from "@/components/OnboardingScreen";
 import {
   useFonts,
   Inter_400Regular,
@@ -25,28 +24,14 @@ import {
 
 SplashScreen.preventAutoHideAsync();
 
-function MainStack() {
-  return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FAF8F0' } }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="triage" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="triage-result" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="add-record" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="add-task" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="add-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="daily-tracker" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="edit-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="privacy-policy" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="terms-of-service" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="support" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="notifications" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-    </Stack>
-  );
-}
+const ONBOARDING_ALLOWED_ROUTES = ['onboarding', 'privacy-policy', 'terms-of-service', 'support'];
 
 function RootLayoutNav() {
   const { isLoading, onboardingComplete } = usePets();
+  const segments = useSegments();
+  const currentRoute = segments[0] ?? '';
+
+  const needsRedirectToOnboarding = !onboardingComplete && !ONBOARDING_ALLOWED_ROUTES.includes(currentRoute);
 
   if (isLoading) {
     return (
@@ -56,15 +41,27 @@ function RootLayoutNav() {
     );
   }
 
-  if (!onboardingComplete) {
-    return <OnboardingScreen />;
-  }
-
   return (
     <>
-      <MainStack />
-      <SwoopNotification />
-      <SitterNoteModal />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FAF8F0' } }}>
+        <Stack.Screen name="onboarding" options={{ animation: 'none' }} />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="triage" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="triage-result" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="add-record" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="add-task" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="add-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="daily-tracker" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="edit-pet" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="privacy-policy" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="terms-of-service" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="support" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="notifications" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      </Stack>
+      {needsRedirectToOnboarding && <Redirect href="/onboarding" />}
+      {onboardingComplete && <SwoopNotification />}
+      {onboardingComplete && <SitterNoteModal />}
     </>
   );
 }
