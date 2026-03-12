@@ -209,7 +209,7 @@ export default function TriageScreen() {
     setSymptoms(prev => prev ? `${prev}, ${s.toLowerCase()}` : s);
   };
 
-  const rolePricing = userRole === 'vet' ? { m: '$25.99/month', a: '$259.99/year', ae: '$21.67/mo' } : userRole === 'sitter' ? { m: '$6.99/month', a: '$69.99/year', ae: '$5.83/mo' } : { m: '$5.99/month', a: '$49.99/year', ae: '$4.17/mo' };
+  const rolePricing = userRole === 'vet' ? { m: '$25.99/month', a: '$259.99/year', ae: '$21.67/mo' } : userRole === 'sitter' ? { m: '$6.99/month', a: '$69.99/year', ae: '$5.83/mo' } : { m: '$4.99/month', a: '$49.99/year', ae: '$4.17/mo' };
   const monthlyPrice = monthlyPackage?.product?.priceString || rolePricing.m;
   const annualPrice = annualPackage?.product?.priceString || rolePricing.a;
   const annualMonthly = annualPackage?.product?.price
