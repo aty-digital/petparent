@@ -473,107 +473,107 @@ export default function TriageScreen() {
             </View>
           )}
 
-          {loading ? (
-            <View style={styles.loadingOverlay}>
-              <Animated.View style={[styles.loadingIconWrap, { transform: [{ scale: loadingPulseAnim }] }]}>
-                <MaterialCommunityIcons name="stethoscope" size={40} color={C.accent} />
-              </Animated.View>
-              <Text style={styles.loadingTitle}>Your AI Vet is Working</Text>
-              <Text style={styles.loadingMessage}>{LOADING_MESSAGES[loadingMsgIndex]}</Text>
-              <View style={styles.loadingDotsRow}>
-                <Animated.View style={[styles.loadingDot, { opacity: loadingDot1 }]} />
-                <Animated.View style={[styles.loadingDot, { opacity: loadingDot2 }]} />
-                <Animated.View style={[styles.loadingDot, { opacity: loadingDot3 }]} />
-              </View>
-              <Text style={styles.loadingHint}>This usually takes 10–15 seconds</Text>
-            </View>
-          ) : (
-            <>
-              <Text style={styles.label}>Describe the symptoms or ask a question</Text>
-              <Text style={styles.sublabel}>Be as detailed as possible - include when symptoms started, severity, and any changes in behavior.</Text>
+          <Text style={styles.label}>Describe the symptoms or ask a question</Text>
+          <Text style={styles.sublabel}>Be as detailed as possible - include when symptoms started, severity, and any changes in behavior.</Text>
 
-              <TextInput
-                style={styles.input}
-                value={symptoms}
-                onChangeText={setSymptoms}
-                placeholder="e.g., My dog has been limping on their front left paw since this morning. They whimper when I touch it..."
-                placeholderTextColor={C.textMuted}
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
+          <TextInput
+            style={styles.input}
+            value={symptoms}
+            onChangeText={setSymptoms}
+            placeholder="e.g., My dog has been limping on their front left paw since this morning. They whimper when I touch it..."
+            placeholderTextColor={C.textMuted}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top"
+          />
 
-              <Text style={styles.quickLabel}>Quick Add Questions</Text>
-              <View style={styles.foodQuestionRow}>
-                <View style={styles.foodQuestionLabel}>
-                  <Ionicons name="nutrition" size={16} color={C.accent} />
-                  <Text style={styles.foodQuestionText}>
-                    Can {triagePet?.name || 'my pet'} eat...
-                  </Text>
-                </View>
-                <View style={styles.foodInputRow}>
-                  <TextInput
-                    style={styles.foodInput}
-                    value={foodInput}
-                    onChangeText={(t) => { setFoodInput(t); if (foodError) setFoodError(''); }}
-                    placeholder="e.g., blueberries, garlic"
-                    placeholderTextColor={C.textMuted}
-                    returnKeyType="done"
-                    onSubmitEditing={handleAddFoodQuestion}
-                  />
-                  <Pressable
-                    style={styles.foodAskBtn}
-                    onPress={handleAddFoodQuestion}
-                  >
-                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                  </Pressable>
-                </View>
-                {foodError ? (
-                  <View style={styles.foodErrorRow}>
-                    <Ionicons name="alert-circle" size={14} color={C.danger} />
-                    <Text style={styles.foodErrorText}>{foodError}</Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <Text style={styles.quickLabel}>Quick Add Symptoms</Text>
-              <View style={styles.quickChips}>
-                {QUICK_SYMPTOMS.map(s => (
-                  <Pressable key={s} style={styles.quickChip} onPress={() => addQuickSymptom(s)}>
-                    <Ionicons name="add" size={14} color={C.accent} />
-                    <Text style={styles.quickChipText}>{s}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {error ? (
-                <View style={styles.errorBox}>
-                  <Ionicons name="alert-circle" size={16} color={C.danger} />
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              ) : null}
-
-              <Pressable
-                onPress={handleTriage}
-                disabled={!symptoms.trim() || !triagePet}
-                style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
-              >
-                <LinearGradient
-                  colors={symptoms.trim() && triagePet ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
-                  style={styles.submitBtn}
-                >
-                  <MaterialCommunityIcons name="stethoscope" size={18} color={symptoms.trim() && triagePet ? C.background : C.textMuted} />
-                  <Text style={[styles.submitText, (!symptoms.trim() || !triagePet) && { color: C.textMuted }]}>Analyze</Text>
-                </LinearGradient>
-              </Pressable>
-
-              <Text style={styles.disclaimer}>
-                This AI tool provides general guidance only and is not a substitute for professional veterinary care. Always consult your veterinarian for medical advice.
+          <Text style={styles.quickLabel}>Quick Add Questions</Text>
+          <View style={styles.foodQuestionRow}>
+            <View style={styles.foodQuestionLabel}>
+              <Ionicons name="nutrition" size={16} color={C.accent} />
+              <Text style={styles.foodQuestionText}>
+                Can {triagePet?.name || 'my pet'} eat...
               </Text>
-            </>
-          )}
+            </View>
+            <View style={styles.foodInputRow}>
+              <TextInput
+                style={styles.foodInput}
+                value={foodInput}
+                onChangeText={(t) => { setFoodInput(t); if (foodError) setFoodError(''); }}
+                placeholder="e.g., blueberries, garlic"
+                placeholderTextColor={C.textMuted}
+                returnKeyType="done"
+                onSubmitEditing={handleAddFoodQuestion}
+              />
+              <Pressable
+                style={styles.foodAskBtn}
+                onPress={handleAddFoodQuestion}
+              >
+                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+              </Pressable>
+            </View>
+            {foodError ? (
+              <View style={styles.foodErrorRow}>
+                <Ionicons name="alert-circle" size={14} color={C.danger} />
+                <Text style={styles.foodErrorText}>{foodError}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Text style={styles.quickLabel}>Quick Add Symptoms</Text>
+          <View style={styles.quickChips}>
+            {QUICK_SYMPTOMS.map(s => (
+              <Pressable key={s} style={styles.quickChip} onPress={() => addQuickSymptom(s)}>
+                <Ionicons name="add" size={14} color={C.accent} />
+                <Text style={styles.quickChipText}>{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={16} color={C.danger} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            onPress={handleTriage}
+            disabled={!symptoms.trim() || loading || !triagePet}
+            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+          >
+            <LinearGradient
+              colors={symptoms.trim() && !loading && triagePet ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+              style={styles.submitBtn}
+            >
+              <MaterialCommunityIcons name="stethoscope" size={18} color={symptoms.trim() && !loading && triagePet ? C.background : C.textMuted} />
+              <Text style={[styles.submitText, (!symptoms.trim() || loading || !triagePet) && { color: C.textMuted }]}>Analyze</Text>
+            </LinearGradient>
+          </Pressable>
+
+          <Text style={styles.disclaimer}>
+            This AI tool provides general guidance only and is not a substitute for professional veterinary care. Always consult your veterinarian for medical advice.
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {loading && (
+        <View style={styles.loadingFullOverlay}>
+          <View style={styles.loadingContent}>
+            <Animated.View style={[styles.loadingIconWrap, { transform: [{ scale: loadingPulseAnim }] }]}>
+              <MaterialCommunityIcons name="stethoscope" size={40} color={C.accent} />
+            </Animated.View>
+            <Text style={styles.loadingTitle}>Your AI Vet is Working</Text>
+            <Text style={styles.loadingMessage}>{LOADING_MESSAGES[loadingMsgIndex]}</Text>
+            <View style={styles.loadingDotsRow}>
+              <Animated.View style={[styles.loadingDot, { opacity: loadingDot1 }]} />
+              <Animated.View style={[styles.loadingDot, { opacity: loadingDot2 }]} />
+              <Animated.View style={[styles.loadingDot, { opacity: loadingDot3 }]} />
+            </View>
+            <Text style={styles.loadingHint}>This usually takes 10–15 seconds</Text>
+          </View>
+        </View>
+      )}
 
       <Modal
         visible={showPaywall}
@@ -728,10 +728,15 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 16 },
   submitText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
   disclaimer: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16, lineHeight: 16 },
-  loadingOverlay: {
+  loadingFullOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: C.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    zIndex: 100,
+  },
+  loadingContent: {
+    alignItems: 'center',
     paddingHorizontal: 20,
   },
   loadingIconWrap: {
