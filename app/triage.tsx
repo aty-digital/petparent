@@ -460,14 +460,31 @@ export default function TriageScreen() {
                   }
                 </Text>
                 {!triageAllowed && (
-                  <Text style={{
-                    fontFamily: 'Inter_400Regular',
-                    fontSize: 12,
-                    color: C.textMuted,
-                    marginTop: 2,
-                  }}>
-                    Upgrade to Premium for unlimited triage sessions
-                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setShowPaywall(true);
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: C.accent,
+                      borderRadius: 10,
+                      paddingVertical: 8,
+                      paddingHorizontal: 14,
+                      marginTop: 8,
+                      alignSelf: 'flex-start',
+                    }}
+                  >
+                    <Ionicons name="star" size={14} color="#FFFFFF" />
+                    <Text style={{
+                      fontFamily: 'Inter_600SemiBold',
+                      fontSize: 13,
+                      color: '#FFFFFF',
+                    }}>Upgrade to Premium</Text>
+                  </Pressable>
                 )}
               </View>
             </View>
