@@ -65,7 +65,7 @@ function TriageCTA() {
             <MaterialCommunityIcons name="stethoscope" size={20} color={C.accent} />
           </View>
           <View>
-            <Text style={styles.triageTitle}>AI Symptom Triage</Text>
+            <Text style={styles.triageTitle}>AI Vet Assistant</Text>
             <Text style={styles.triageSubtitle}>Analyze symptoms instantly</Text>
           </View>
         </View>
@@ -221,7 +221,7 @@ export default function HomeScreen() {
           <View style={styles.emptyState}>
             <BrandLogo size="medium" showText={true} showSubtitle={false} />
             <Text style={styles.emptyTitle}>Welcome!</Text>
-            <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI symptom triage, and more.</Text>
+            <Text style={styles.emptyText}>Add your first pet to get started with health tracking, AI vet assistant, and more.</Text>
             <Pressable
               style={styles.addPetButton}
               onPress={() => {

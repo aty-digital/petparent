@@ -86,7 +86,7 @@ function SitterTriageCTA() {
             <MaterialCommunityIcons name="stethoscope" size={18} color="#FFFFFF" />
           </View>
           <View>
-            <Text style={styles.triageTitle}>AI Symptom Triage</Text>
+            <Text style={styles.triageTitle}>AI Vet Assistant</Text>
             <Text style={styles.triageSubtitle}>
               {tier === 'free'
                 ? `${triageUsedThisMonth}/${maxFreeTriagePerMonth} free sessions used`

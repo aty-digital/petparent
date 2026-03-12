@@ -29,6 +29,12 @@ const QUICK_SYMPTOMS = [
   'Eye or ear discharge',
 ];
 
+const LOADING_MESSAGES = [
+  'Analyzing symptoms...',
+  'Consulting veterinary database...',
+  'Preparing your assessment...',
+];
+
 export default function TriageScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
@@ -53,16 +59,82 @@ export default function TriageScreen() {
   const [restoring, setRestoring] = useState(false);
   const [showPurchaseConfirmation, setShowPurchaseConfirmation] = useState(false);
   const [purchasedPlanLabel, setPurchasedPlanLabel] = useState('');
+  const [foodInput, setFoodInput] = useState('');
+  const [foodError, setFoodError] = useState('');
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const confirmFadeAnim = useRef(new Animated.Value(0)).current;
   const confirmScaleAnim = useRef(new Animated.Value(0.8)).current;
   const checkmarkScaleAnim = useRef(new Animated.Value(0)).current;
+  const loadingPulseAnim = useRef(new Animated.Value(1)).current;
+  const loadingDot1 = useRef(new Animated.Value(0)).current;
+  const loadingDot2 = useRef(new Animated.Value(0)).current;
+  const loadingDot3 = useRef(new Animated.Value(0)).current;
+  const mountedRef = useRef(true);
   const triageAllowed = canUseTriageThisMonth();
 
   useEffect(() => {
+    mountedRef.current = true;
     AsyncStorage.getItem(TRIAGE_DISCLAIMER_KEY).then(val => {
       if (val !== 'true') setShowDisclaimer(true);
     });
+    return () => { mountedRef.current = false; };
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      loadingPulseAnim.setValue(1);
+      loadingDot1.setValue(0);
+      loadingDot2.setValue(0);
+      loadingDot3.setValue(0);
+      setLoadingMsgIndex(0);
+      return;
+    }
+
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(loadingPulseAnim, { toValue: 1.15, duration: 800, useNativeDriver: true }),
+        Animated.timing(loadingPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    pulseLoop.start();
+
+    const dotLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(loadingDot1, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(loadingDot2, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(loadingDot3, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(loadingDot1, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(loadingDot2, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(loadingDot3, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.delay(300),
+      ])
+    );
+    dotLoop.start();
+
+    const msgInterval = setInterval(() => {
+      setLoadingMsgIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
+    }, 3000);
+
+    return () => {
+      pulseLoop.stop();
+      dotLoop.stop();
+      clearInterval(msgInterval);
+    };
+  }, [loading]);
+
+  const handleAddFoodQuestion = () => {
+    setFoodError('');
+    if (!foodInput.trim()) {
+      setFoodError('Please enter a food name');
+      return;
+    }
+    Haptics.selectionAsync();
+    const petName = triagePet?.name || 'my pet';
+    const species = triagePet?.species || 'dog';
+    const question = `Can ${petName} eat ${foodInput.trim()}? Is ${foodInput.trim()} safe for ${species}s?`;
+    setSymptoms(prev => prev ? `${prev}\n${question}` : question);
+    setFoodInput('');
+  };
 
   const acceptDisclaimer = async () => {
     await AsyncStorage.setItem(TRIAGE_DISCLAIMER_KEY, 'true');
@@ -107,6 +179,8 @@ export default function TriageScreen() {
         disclaimer: data.disclaimer || 'This is AI guidance and not a substitute for professional veterinary care.',
       };
 
+      if (!mountedRef.current) return;
+
       await addTriageResult(result);
       await recordTriageUsage();
       if (!isSitter) {
@@ -114,7 +188,7 @@ export default function TriageScreen() {
           id: generateId(),
           petId: triagePet.id,
           type: 'triage',
-          title: 'Symptom Triage Log',
+          title: 'AI Vet Assistant Log',
           description: `${result.urgencyLabel}: ${symptoms.trim().substring(0, 100)}`,
           date: new Date().toISOString(),
           status: result.urgency,
@@ -123,9 +197,10 @@ export default function TriageScreen() {
 
       router.replace({ pathname: '/triage-result', params: { resultId: result.id } });
     } catch (e) {
+      if (!mountedRef.current) return;
       setError('Failed to analyze symptoms. Please try again.');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
@@ -215,7 +290,7 @@ export default function TriageScreen() {
             </View>
             <Text style={styles.disclaimerTitle}>Important Notice</Text>
             <Text style={styles.disclaimerBody}>
-              The AI Symptom Triage feature provides general guidance only. It is{' '}
+              The AI Vet Assistant feature provides general guidance only. It is{' '}
               <Text style={{ fontFamily: 'Inter_700Bold' }}>not a substitute for professional veterinary care</Text>.
             </Text>
             <Text style={styles.disclaimerBody}>
@@ -263,7 +338,7 @@ export default function TriageScreen() {
             <Pressable onPress={() => router.back()} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={24} color={C.text} />
             </Pressable>
-            <Text style={styles.headerTitle}>Symptom Triage</Text>
+            <Text style={styles.headerTitle}>AI Vet Assistant</Text>
             <View style={{ width: 40 }} />
           </View>
 
@@ -398,60 +473,105 @@ export default function TriageScreen() {
             </View>
           )}
 
-          <Text style={styles.label}>Describe the symptoms</Text>
-          <Text style={styles.sublabel}>Be as detailed as possible - include when symptoms started, severity, and any changes in behavior.</Text>
-
-          <TextInput
-            style={styles.input}
-            value={symptoms}
-            onChangeText={setSymptoms}
-            placeholder="e.g., My dog has been limping on their front left paw since this morning. They whimper when I touch it..."
-            placeholderTextColor={C.textMuted}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-          />
-
-          <Text style={styles.quickLabel}>Quick Add Symptoms</Text>
-          <View style={styles.quickChips}>
-            {QUICK_SYMPTOMS.map(s => (
-              <Pressable key={s} style={styles.quickChip} onPress={() => addQuickSymptom(s)}>
-                <Ionicons name="add" size={14} color={C.accent} />
-                <Text style={styles.quickChipText}>{s}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {error ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={16} color={C.danger} />
-              <Text style={styles.errorText}>{error}</Text>
+          {loading ? (
+            <View style={styles.loadingOverlay}>
+              <Animated.View style={[styles.loadingIconWrap, { transform: [{ scale: loadingPulseAnim }] }]}>
+                <MaterialCommunityIcons name="stethoscope" size={40} color={C.accent} />
+              </Animated.View>
+              <Text style={styles.loadingTitle}>Your AI Vet is Working</Text>
+              <Text style={styles.loadingMessage}>{LOADING_MESSAGES[loadingMsgIndex]}</Text>
+              <View style={styles.loadingDotsRow}>
+                <Animated.View style={[styles.loadingDot, { opacity: loadingDot1 }]} />
+                <Animated.View style={[styles.loadingDot, { opacity: loadingDot2 }]} />
+                <Animated.View style={[styles.loadingDot, { opacity: loadingDot3 }]} />
+              </View>
+              <Text style={styles.loadingHint}>This usually takes 10–15 seconds</Text>
             </View>
-          ) : null}
+          ) : (
+            <>
+              <Text style={styles.label}>Describe the symptoms or ask a question</Text>
+              <Text style={styles.sublabel}>Be as detailed as possible - include when symptoms started, severity, and any changes in behavior.</Text>
 
-          <Pressable
-            onPress={handleTriage}
-            disabled={!symptoms.trim() || loading || !triagePet}
-            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
-          >
-            <LinearGradient
-              colors={symptoms.trim() && !loading && triagePet ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
-              style={styles.submitBtn}
-            >
-              {loading ? (
-                <ActivityIndicator color={C.background} />
-              ) : (
-                <>
+              <TextInput
+                style={styles.input}
+                value={symptoms}
+                onChangeText={setSymptoms}
+                placeholder="e.g., My dog has been limping on their front left paw since this morning. They whimper when I touch it..."
+                placeholderTextColor={C.textMuted}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+              />
+
+              <Text style={styles.quickLabel}>Quick Add Questions</Text>
+              <View style={styles.foodQuestionRow}>
+                <View style={styles.foodQuestionLabel}>
+                  <Ionicons name="nutrition" size={16} color={C.accent} />
+                  <Text style={styles.foodQuestionText}>
+                    Can {triagePet?.name || 'my pet'} eat...
+                  </Text>
+                </View>
+                <View style={styles.foodInputRow}>
+                  <TextInput
+                    style={styles.foodInput}
+                    value={foodInput}
+                    onChangeText={(t) => { setFoodInput(t); if (foodError) setFoodError(''); }}
+                    placeholder="e.g., blueberries, garlic"
+                    placeholderTextColor={C.textMuted}
+                    returnKeyType="done"
+                    onSubmitEditing={handleAddFoodQuestion}
+                  />
+                  <Pressable
+                    style={styles.foodAskBtn}
+                    onPress={handleAddFoodQuestion}
+                  >
+                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+                {foodError ? (
+                  <View style={styles.foodErrorRow}>
+                    <Ionicons name="alert-circle" size={14} color={C.danger} />
+                    <Text style={styles.foodErrorText}>{foodError}</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <Text style={styles.quickLabel}>Quick Add Symptoms</Text>
+              <View style={styles.quickChips}>
+                {QUICK_SYMPTOMS.map(s => (
+                  <Pressable key={s} style={styles.quickChip} onPress={() => addQuickSymptom(s)}>
+                    <Ionicons name="add" size={14} color={C.accent} />
+                    <Text style={styles.quickChipText}>{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="alert-circle" size={16} color={C.danger} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+
+              <Pressable
+                onPress={handleTriage}
+                disabled={!symptoms.trim() || !triagePet}
+                style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+              >
+                <LinearGradient
+                  colors={symptoms.trim() && triagePet ? [C.accent, C.accentDim] : [C.surfaceElevated, C.surfaceElevated]}
+                  style={styles.submitBtn}
+                >
                   <MaterialCommunityIcons name="stethoscope" size={18} color={symptoms.trim() && triagePet ? C.background : C.textMuted} />
-                  <Text style={[styles.submitText, (!symptoms.trim() || !triagePet) && { color: C.textMuted }]}>Analyze Symptoms</Text>
-                </>
-              )}
-            </LinearGradient>
-          </Pressable>
+                  <Text style={[styles.submitText, (!symptoms.trim() || !triagePet) && { color: C.textMuted }]}>Analyze</Text>
+                </LinearGradient>
+              </Pressable>
 
-          <Text style={styles.disclaimer}>
-            This AI triage tool provides general guidance only and is not a substitute for professional veterinary care. Always consult your veterinarian for medical advice.
-          </Text>
+              <Text style={styles.disclaimer}>
+                This AI tool provides general guidance only and is not a substitute for professional veterinary care. Always consult your veterinarian for medical advice.
+              </Text>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -608,6 +728,104 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 16 },
   submitText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: C.background },
   disclaimer: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16, lineHeight: 16 },
+  loadingOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  loadingIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: C.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  loadingTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: C.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  loadingMessage: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  loadingDotsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+  },
+  loadingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: C.accent,
+  },
+  loadingHint: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.textMuted,
+    textAlign: 'center',
+  },
+  foodQuestionRow: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    gap: 10,
+  },
+  foodQuestionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  foodQuestionText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: C.text,
+  },
+  foodInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  foodInput: {
+    flex: 1,
+    backgroundColor: C.surfaceElevated,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: C.text,
+  },
+  foodAskBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  foodErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  foodErrorText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: C.danger,
+  },
   disclaimerOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',

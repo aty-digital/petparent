@@ -508,7 +508,7 @@ export default function OnboardingScreen() {
                 <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
                   <Ionicons name="chatbubble-ellipses" size={18} color={C.accent} />
                 </View>
-                <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Symptom Triage</Text>
+                <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Vet Assistant</Text>
               </View>
               <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
                 Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.
@@ -583,7 +583,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.featureList}>
         {[
-          { icon: 'shield-checkmark', text: 'AI symptom triage' },
+          { icon: 'shield-checkmark', text: 'AI vet assistant' },
           { icon: 'calendar', text: 'Health task tracking' },
           { icon: 'analytics', text: 'Daily wellness logs' },
           { icon: 'qr-code', text: 'Shareable pet profiles' },
@@ -943,7 +943,7 @@ export default function OnboardingScreen() {
                 <View style={[introStyles.howCardIconWrap, { width: 34, height: 34 }]}>
                   <Ionicons name="chatbubble-ellipses" size={18} color={C.accent} />
                 </View>
-                <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Symptom Triage</Text>
+                <Text style={[introStyles.howCardTitle, { fontSize: 15 }]}>AI Vet Assistant</Text>
               </View>
               <Text style={[introStyles.howCardDesc, { fontSize: 13, lineHeight: 19 }]}>
                 Describe what you're seeing in your pet. Get an urgent/not-urgent verdict with a clear reason why {'\u2013'} in under 30 seconds.

@@ -27,7 +27,7 @@ export default function TriageResultScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={C.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Triage Result</Text>
+          <Text style={styles.headerTitle}>AI Vet Assistant</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyState}>
@@ -55,7 +55,7 @@ export default function TriageResultScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={C.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Symptom Triage</Text>
+          <Text style={styles.headerTitle}>AI Vet Assistant</Text>
           <View style={{ width: 40 }} />
         </View>
 
