@@ -359,7 +359,7 @@ export default function OnboardingScreen() {
             </Text>
           </StaggerItem>
 
-          <StaggerItem anim={welcomeAnims[2]}>
+          <StaggerItem anim={welcomeAnims[2]} style={{ alignSelf: 'stretch', alignItems: 'center' }}>
             <View style={introStyles.testimonialCard}>
               <Text style={introStyles.quoteMarkLeft}>{'\u201D'}</Text>
               <Text style={introStyles.testimonialTitle}>Perfect</Text>
