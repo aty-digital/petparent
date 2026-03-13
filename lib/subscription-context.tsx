@@ -119,11 +119,17 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
       }
 
       if (Platform.OS !== 'web') {
+        if (Platform.OS === 'ios' && !trackingAllowed) {
+          console.log('ATT tracking denied on iOS — RevenueCat will initialize without IDFA collection');
+        }
         const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
         if (apiKey) {
           try {
             Purchases.setLogLevel(LOG_LEVEL.DEBUG);
             await Purchases.configure({ apiKey });
+            if (Platform.OS === 'ios' && !trackingAllowed) {
+              await Purchases.setAttributes({ '$attConsentStatus': 'denied' });
+            }
             setRcInitialized(true);
 
             const customerInfo = await Purchases.getCustomerInfo();
