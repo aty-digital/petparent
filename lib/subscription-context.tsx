@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL, PURCHASES_ERROR_CODE } from 'react-native-purchases';
+import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL, PURCHASES_ERROR_CODE, type PurchasesError } from 'react-native-purchases';
 import { usePets, type UserRole } from './pet-context';
 import { apiRequest } from './query-client';
 
@@ -71,9 +71,12 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
       setTier('free');
       setTriageUsage({ month: getCurrentMonth(), count: 0 });
       setPaywallCompleteState(false);
-      if (Platform.OS !== 'web' && rcInitialized) {
+      if (Platform.OS !== 'web') {
         try {
-          await Purchases.logOut();
+          const configured = await Purchases.isConfigured();
+          if (configured) {
+            await Purchases.logOut();
+          }
         } catch (logoutErr) {
           console.log('RevenueCat logOut (non-blocking):', logoutErr);
         }
@@ -217,12 +220,13 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
         return 'success';
       }
       return 'error';
-    } catch (e: any) {
-      if (e.userCancelled || e.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+    } catch (e: unknown) {
+      const rcError = e as PurchasesError;
+      if (rcError.userCancelled || rcError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         return 'cancelled';
       }
       console.error('Purchase failed:', e);
-      const code = e.code as string | undefined;
+      const code = rcError.code;
       let userMessage = 'Something went wrong with your purchase. Please try again.';
       if (code === PURCHASES_ERROR_CODE.NETWORK_ERROR || code === PURCHASES_ERROR_CODE.OFFLINE_CONNECTION_ERROR) {
         userMessage = 'Unable to connect to the store. Please check your internet connection and try again.';

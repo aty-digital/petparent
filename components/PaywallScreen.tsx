@@ -162,6 +162,8 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const planLabel = selectedPlan === 'annual' ? 'Annual' : 'Monthly';
         showConfirmationScreen(planLabel);
+      } else if (result === 'cancelled') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } else if (result === 'error') {
         Alert.alert(
           'Purchase Not Completed',
@@ -169,9 +171,10 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
           [{ text: 'OK' }]
         );
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Purchase Failed', e.message || 'Something went wrong. Please try again.');
+      const message = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+      Alert.alert('Purchase Failed', message);
     } finally {
       setPurchasing(false);
     }

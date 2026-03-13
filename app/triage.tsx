@@ -254,9 +254,10 @@ export default function TriageScreen() {
       } else if (result === 'error') {
         Alert.alert('Purchase Not Completed', 'The purchase could not be verified. Please try restoring your purchases or contact support.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Purchase Failed', e.message || 'Something went wrong. Please try again.');
+      const message = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+      Alert.alert('Purchase Failed', message);
     } finally {
       setPurchasing(false);
     }
