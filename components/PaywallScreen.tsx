@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet, Text, View, Pressable, Platform, ScrollView,
-  Animated, Dimensions, ActivityIndicator, Alert,
+  Animated, Dimensions, ActivityIndicator, Alert, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useSubscription } from '@/lib/subscription-context';
 import { usePets, type UserRole } from '@/lib/pet-context';
+import { getApiUrl } from '@/lib/query-client';
 
 const C = Colors.dark;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -394,10 +395,24 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
             <Pressable onPress={handleRestore}>
               <Text style={styles.linkText}>Restore Purchases</Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/terms-of-service')}>
+            <Pressable onPress={() => {
+              try {
+                const url = new URL('/terms-of-service', getApiUrl()).href;
+                Linking.openURL(url).catch(() => router.push('/terms-of-service'));
+              } catch {
+                router.push('/terms-of-service');
+              }
+            }}>
               <Text style={styles.linkText}>Terms of Use</Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/privacy-policy')}>
+            <Pressable onPress={() => {
+              try {
+                const url = new URL('/privacy-policy', getApiUrl()).href;
+                Linking.openURL(url).catch(() => router.push('/privacy-policy'));
+              } catch {
+                router.push('/privacy-policy');
+              }
+            }}>
               <Text style={styles.linkText}>Privacy Policy</Text>
             </Pressable>
           </View>
