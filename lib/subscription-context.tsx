@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
+import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL, PURCHASES_ERROR_CODE } from 'react-native-purchases';
 import { usePets, type UserRole } from './pet-context';
 import { apiRequest } from './query-client';
 
@@ -13,7 +13,7 @@ interface SubscriptionContextValue {
   packages: PurchasesPackage[];
   monthlyPackage: PurchasesPackage | null;
   annualPackage: PurchasesPackage | null;
-  purchasePackage: (pkg: PurchasesPackage) => Promise<'success' | 'cancelled' | 'failed'>;
+  purchasePackage: (pkg: PurchasesPackage) => Promise<'success' | 'cancelled' | 'error'>;
   restorePurchases: () => Promise<boolean>;
   canAddMorePets: (currentPetCount: number) => boolean;
   canUseTriageThisMonth: () => boolean;
@@ -71,6 +71,15 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
       setTier('free');
       setTriageUsage({ month: getCurrentMonth(), count: 0 });
       setPaywallCompleteState(false);
+      if (Platform.OS !== 'web' && rcInitialized) {
+        try {
+          await Purchases.logOut();
+        } catch (logoutErr) {
+          console.log('RevenueCat logOut (non-blocking):', logoutErr);
+        }
+        setRcInitialized(false);
+        setPackages([]);
+      }
       setIsLoading(false);
       return;
     }
@@ -125,10 +134,20 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
         const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
         if (apiKey) {
           try {
-            Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-            await Purchases.configure({ apiKey });
-            if (Platform.OS === 'ios' && !trackingAllowed) {
-              await Purchases.setAttributes({ '$attConsentStatus': 'denied' });
+            const alreadyConfigured = await Purchases.isConfigured();
+            if (!alreadyConfigured) {
+              Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+              await Purchases.configure({ apiKey, appUserID: userEmail });
+              if (Platform.OS === 'ios' && !trackingAllowed) {
+                await Purchases.setAttributes({ '$attConsentStatus': 'denied' });
+              }
+            } else {
+              try {
+                const { customerInfo: loginInfo } = await Purchases.logIn(userEmail);
+                checkEntitlements(loginInfo);
+              } catch (loginErr) {
+                console.log('RevenueCat logIn (non-blocking):', loginErr);
+              }
             }
             setRcInitialized(true);
 
@@ -181,7 +200,7 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
     }
   };
 
-  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<'success' | 'cancelled' | 'failed'> => {
+  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<'success' | 'cancelled' | 'error'> => {
     if (!rcInitialized) {
       console.warn('RevenueCat not initialized — purchase unavailable');
       throw new Error('Purchases are not available right now. Please try again later.');
@@ -197,11 +216,30 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
         }
         return 'success';
       }
-      return 'failed';
+      return 'error';
     } catch (e: any) {
-      if (e.userCancelled) return 'cancelled';
+      if (e.userCancelled || e.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+        return 'cancelled';
+      }
       console.error('Purchase failed:', e);
-      throw e;
+      const code = e.code as string | undefined;
+      let userMessage = 'Something went wrong with your purchase. Please try again.';
+      if (code === PURCHASES_ERROR_CODE.NETWORK_ERROR || code === PURCHASES_ERROR_CODE.OFFLINE_CONNECTION_ERROR) {
+        userMessage = 'Unable to connect to the store. Please check your internet connection and try again.';
+      } else if (code === PURCHASES_ERROR_CODE.PRODUCT_NOT_AVAILABLE_FOR_PURCHASE_ERROR) {
+        userMessage = 'This subscription plan is currently unavailable. Please try again later.';
+      } else if (code === PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR) {
+        userMessage = 'Purchases are not allowed on this device. Please check your device settings.';
+      } else if (code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) {
+        userMessage = 'The App Store encountered an issue. Please try again in a few moments.';
+      } else if (code === PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR) {
+        userMessage = 'You already have an active subscription. Try restoring your purchases.';
+      } else if (code === PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) {
+        userMessage = 'Your payment is pending approval. You will get access once the payment is confirmed.';
+      } else if (code === PURCHASES_ERROR_CODE.OPERATION_ALREADY_IN_PROGRESS_ERROR) {
+        userMessage = 'A purchase is already in progress. Please wait a moment.';
+      }
+      throw new Error(userMessage);
     }
   }, [rcInitialized, userEmail]);
 

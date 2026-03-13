@@ -251,11 +251,12 @@ export default function TriageScreen() {
       if (result === 'success') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showConfirmationModal(selectedPlan === 'annual' ? 'Annual' : 'Monthly');
-      } else if (result === 'failed') {
-        Alert.alert('Purchase Not Completed', 'The purchase could not be completed. Please try again.');
+      } else if (result === 'error') {
+        Alert.alert('Purchase Not Completed', 'The purchase could not be verified. Please try restoring your purchases or contact support.');
       }
-    } catch (_e) {
-      Alert.alert('Purchase Failed', 'Something went wrong. Please try again.');
+    } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Purchase Failed', e.message || 'Something went wrong. Please try again.');
     } finally {
       setPurchasing(false);
     }
