@@ -19,7 +19,8 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "PetParent needs access to your photo library so you can add photos to your pet profiles.",
         "NSCameraUsageDescription": "PetParent needs access to your camera so you can take photos of your pets.",
-        "NSPhotoLibraryAddUsageDescription": "PetParent needs permission to save photos to your library."
+        "NSPhotoLibraryAddUsageDescription": "PetParent needs permission to save photos to your library.",
+        "NSUserTrackingUsageDescription": "PetParent uses this to personalize your experience and help us improve the app. Your data is never sold to third parties."
       }
     },
     "android": {
@@ -45,7 +46,8 @@
         "expo-secure-store"
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-tracking-transparency"
     ],
     "experiments": {
       "typedRoutes": true,

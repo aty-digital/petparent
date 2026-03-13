@@ -3,6 +3,7 @@ import {
   StyleSheet, Text, View, Pressable, Platform, ScrollView,
   Animated, Dimensions, ActivityIndicator, Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -72,6 +73,7 @@ const PRICING = {
 };
 
 export default function PaywallScreen({ onComplete, showBackButton, onBack }: PaywallScreenProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -392,13 +394,23 @@ export default function PaywallScreen({ onComplete, showBackButton, onBack }: Pa
             <Pressable onPress={handleRestore}>
               <Text style={styles.linkText}>Restore Purchases</Text>
             </Pressable>
+            <Pressable onPress={() => router.push('/terms-of-service')}>
+              <Text style={styles.linkText}>Terms of Use</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/privacy-policy')}>
+              <Text style={styles.linkText}>Privacy Policy</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.legalText}>
+            PetParent Premium auto-renewable subscription. {selectedPlan === 'annual'
+              ? `Annual plan: ${pricing.annual}/year (${pricing.monthlyEquiv}/month).`
+              : `Monthly plan: ${pricing.monthly}/month.`}{' '}
             Payment will be charged to your Apple ID account at confirmation of purchase.
             Subscription automatically renews unless auto-renew is turned off at least
             24-hours before the end of the current period. Your account will be charged
             for renewal within 24-hours prior to the end of the current period.
+            You can manage or cancel your subscription in your device's Settings.
           </Text>
         </Animated.View>
       </ScrollView>

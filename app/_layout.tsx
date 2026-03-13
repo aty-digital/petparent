@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { Asset } from "expo-asset";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -83,18 +83,28 @@ export default function RootLayout() {
     Inter_700Bold,
   });
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [trackingRequested, setTrackingRequested] = useState(Platform.OS !== 'ios');
 
   useEffect(() => {
     Asset.loadAsync(onboardingImages).then(() => setImagesLoaded(true)).catch(() => setImagesLoaded(true));
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && imagesLoaded) {
+    if (Platform.OS === 'ios') {
+      import('expo-tracking-transparency')
+        .then(({ requestTrackingPermissionsAsync }) => requestTrackingPermissionsAsync())
+        .then(() => setTrackingRequested(true))
+        .catch(() => setTrackingRequested(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && imagesLoaded && trackingRequested) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, imagesLoaded]);
+  }, [fontsLoaded, imagesLoaded, trackingRequested]);
 
-  if (!fontsLoaded || !imagesLoaded) return null;
+  if (!fontsLoaded || !imagesLoaded || !trackingRequested) return null;
 
   return (
     <ErrorBoundary>
