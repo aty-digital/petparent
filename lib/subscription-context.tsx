@@ -51,7 +51,7 @@ function getCurrentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export function SubscriptionProvider({ children }: { children: ReactNode }) {
+export function SubscriptionProvider({ children, trackingAllowed = true }: { children: ReactNode; trackingAllowed?: boolean }) {
   const { userEmail, userRole, sharedPets } = usePets();
   const [tier, setTier] = useState<SubscriptionTier>('free');
   const [isLoading, setIsLoading] = useState(true);

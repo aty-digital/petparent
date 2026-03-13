@@ -84,6 +84,7 @@ export default function RootLayout() {
   });
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [trackingRequested, setTrackingRequested] = useState(Platform.OS !== 'ios');
+  const [trackingAllowed, setTrackingAllowed] = useState(Platform.OS !== 'ios');
 
   useEffect(() => {
     Asset.loadAsync(onboardingImages).then(() => setImagesLoaded(true)).catch(() => setImagesLoaded(true));
@@ -93,8 +94,14 @@ export default function RootLayout() {
     if (Platform.OS === 'ios') {
       import('expo-tracking-transparency')
         .then(({ requestTrackingPermissionsAsync }) => requestTrackingPermissionsAsync())
-        .then(() => setTrackingRequested(true))
-        .catch(() => setTrackingRequested(true));
+        .then((status) => {
+          setTrackingAllowed(status.status === 'granted');
+          setTrackingRequested(true);
+        })
+        .catch(() => {
+          setTrackingAllowed(false);
+          setTrackingRequested(true);
+        });
     }
   }, []);
 
@@ -112,7 +119,7 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
             <PetProvider>
-              <SubscriptionProvider>
+              <SubscriptionProvider trackingAllowed={trackingAllowed}>
                 <NotificationProvider>
                   <StatusBar style="dark" />
                   <RootLayoutNav />
