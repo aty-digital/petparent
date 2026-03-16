@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.petparent",
+      "bundleIdentifier": "com.aty.petparent",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "PetParent needs access to your photo library so you can add photos to your pet profiles.",
         "NSCameraUsageDescription": "PetParent needs access to your camera so you can take photos of your pets.",
