@@ -29,6 +29,7 @@
   "submit": {
     "production": {
       "ios": {
+        "_instructions": "Fill in the three values below before running 'eas submit'. appleId = your Apple ID email for App Store Connect. ascAppId = the numeric App ID found in App Store Connect > My Apps > App Information > Apple ID. appleTeamId = your 10-character Team ID found at developer.apple.com/account.",
         "appleId": "YOUR_APPLE_ID_EMAIL@example.com",
         "ascAppId": "YOUR_APP_STORE_CONNECT_NUMERIC_APP_ID",
         "appleTeamId": "YOUR_APPLE_TEAM_ID"
