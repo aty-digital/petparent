@@ -76,7 +76,7 @@ const onboardingImages = [
 ];
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
@@ -106,12 +106,12 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && imagesLoaded && trackingRequested) {
+    if ((fontsLoaded || fontError) && imagesLoaded && trackingRequested) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, imagesLoaded, trackingRequested]);
+  }, [fontsLoaded, fontError, imagesLoaded, trackingRequested]);
 
-  if (!fontsLoaded || !imagesLoaded || !trackingRequested) return null;
+  if ((!fontsLoaded && !fontError) || !imagesLoaded || !trackingRequested) return null;
 
   return (
     <ErrorBoundary>

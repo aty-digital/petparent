@@ -47,7 +47,9 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "expo-notifications",
+      "expo-image-picker"
     ],
     "experiments": {
       "typedRoutes": true,

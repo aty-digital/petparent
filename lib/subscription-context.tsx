@@ -30,7 +30,31 @@ const SubscriptionContext = createContext<SubscriptionContextValue | null>(null)
 
 function subKey(email: string, suffix: string): string {
   const sanitized = email.toLowerCase().trim();
+  return `@petparent_user_${sanitized}_${suffix}`;
+}
+
+function oldSubKey(email: string, suffix: string): string {
+  const sanitized = email.toLowerCase().trim();
   return `@pawguard_user_${sanitized}_${suffix}`;
+}
+
+async function migrateSubKeys(email: string): Promise<void> {
+  const suffixes = ['subscription_tier', 'triage_usage', 'paywall_complete'];
+  try {
+    await Promise.all(suffixes.map(async (suffix) => {
+      const oldKey = oldSubKey(email, suffix);
+      const newKey = subKey(email, suffix);
+      const existing = await AsyncStorage.getItem(newKey);
+      if (existing !== null) return;
+      const value = await AsyncStorage.getItem(oldKey);
+      if (value !== null) {
+        await AsyncStorage.setItem(newKey, value);
+        await AsyncStorage.removeItem(oldKey);
+      }
+    }));
+  } catch (e) {
+    console.log('Sub key migration (non-blocking):', e);
+  }
 }
 
 const MAX_FREE_PETS = 1;
@@ -88,6 +112,8 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
     }
 
     try {
+      await migrateSubKeys(userEmail);
+
       const [savedTier, savedUsage, savedPaywall] = await Promise.all([
         AsyncStorage.getItem(subKey(userEmail, 'subscription_tier')),
         AsyncStorage.getItem(subKey(userEmail, 'triage_usage')),
@@ -139,7 +165,9 @@ export function SubscriptionProvider({ children, trackingAllowed = true }: { chi
           try {
             const alreadyConfigured = await Purchases.isConfigured();
             if (!alreadyConfigured) {
-              Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+              if (__DEV__) {
+                Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+              }
               await Purchases.configure({ apiKey, appUserID: userEmail });
               if (Platform.OS === 'ios' && !trackingAllowed) {
                 await Purchases.setAttributes({ '$attConsentStatus': 'denied' });

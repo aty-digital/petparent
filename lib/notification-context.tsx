@@ -19,7 +19,26 @@ interface NotificationContextValue {
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
 function notifKey(email: string): string {
+  return `@petparent_user_${email.toLowerCase().trim()}_notifications`;
+}
+
+function oldNotifKey(email: string): string {
   return `@pawguard_user_${email.toLowerCase().trim()}_notifications`;
+}
+
+async function migrateNotifKey(email: string): Promise<void> {
+  try {
+    const newKey = notifKey(email);
+    const existing = await AsyncStorage.getItem(newKey);
+    if (existing !== null) return;
+    const value = await AsyncStorage.getItem(oldNotifKey(email));
+    if (value !== null) {
+      await AsyncStorage.setItem(newKey, value);
+      await AsyncStorage.removeItem(oldNotifKey(email));
+    }
+  } catch (e) {
+    console.log('Notif key migration (non-blocking):', e);
+  }
 }
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -37,6 +56,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const loadNotifications = async (email: string) => {
     try {
+      await migrateNotifKey(email);
       const data = await AsyncStorage.getItem(notifKey(email));
       if (data) {
         setNotifications(JSON.parse(data));
